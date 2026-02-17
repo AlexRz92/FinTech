@@ -17,7 +17,7 @@ export default function Layout({ children, userRole, userName }: LayoutProps) {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-fintage-dark">
       <Sidebar userRole={userRole} onLogout={handleLogout} />
       <Topbar userName={userName} />
 

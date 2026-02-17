@@ -25,8 +25,8 @@ export default function ChartPanel({ data, title }: ChartPanelProps) {
   };
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-6">
-      <h3 className="text-lg font-semibold text-gray-900 mb-6">{title}</h3>
+    <div className="card-fintage rounded-lg p-6">
+      <h3 className="text-lg font-semibold text-white mb-6">{title}</h3>
 
       <div className="flex items-end gap-2 h-64 justify-between">
         {data.map((point, idx) => {
@@ -37,7 +37,7 @@ export default function ChartPanel({ data, title }: ChartPanelProps) {
             <div key={idx} className="flex-1 flex flex-col items-center gap-2">
               <div className="flex gap-1 items-end h-48">
                 <div
-                  className="w-1/2 bg-blue-600 rounded-t-lg transition-all"
+                  className="w-1/2 bg-blue-500 rounded-t-lg transition-all"
                   style={{ height: `${adminHeight}%` }}
                   title={`Admin: ${formatCurrency(point.adminCapital)}`}
                 />
@@ -47,7 +47,7 @@ export default function ChartPanel({ data, title }: ChartPanelProps) {
                   title={`User: ${formatCurrency(point.userCapital)}`}
                 />
               </div>
-              <span className="text-xs font-medium text-gray-600">{point.week}</span>
+              <span className="text-xs font-medium text-gray-400">{point.week}</span>
             </div>
           );
         })}
@@ -55,12 +55,12 @@ export default function ChartPanel({ data, title }: ChartPanelProps) {
 
       <div className="flex gap-6 justify-center mt-6 text-sm">
         <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded bg-blue-600" />
-          <span className="text-gray-700">Capital Admin</span>
+          <div className="w-3 h-3 rounded bg-blue-500" />
+          <span className="text-gray-300">Capital Admin</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 rounded bg-emerald-500" />
-          <span className="text-gray-700">Capital User</span>
+          <span className="text-gray-300">Capital User</span>
         </div>
       </div>
     </div>

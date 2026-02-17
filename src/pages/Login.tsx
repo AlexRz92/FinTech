@@ -19,21 +19,21 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-gray-100 flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <div className="bg-white rounded-2xl shadow-xl p-8">
+        <div className="card-fintage rounded-2xl p-8">
           <div className="flex justify-center mb-8">
-            <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl flex items-center justify-center">
+            <div className="w-16 h-16 gradient-fintage-blue rounded-2xl flex items-center justify-center shadow-lg">
               <Wallet className="w-8 h-8 text-white" />
             </div>
           </div>
 
-          <h1 className="text-3xl font-bold text-center text-gray-900 mb-2">FinApp</h1>
-          <p className="text-center text-gray-600 mb-8">Gestión Financiera Privada</p>
+          <h1 className="text-3xl font-bold text-center text-white mb-2">Fintage</h1>
+          <p className="text-center text-gray-400 mb-8">Private Capital Management</p>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="username" className="block text-sm font-medium text-gray-300 mb-2">
                 Usuario
               </label>
               <input
@@ -41,14 +41,14 @@ export default function Login() {
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                className="input-fintage w-full px-4 py-3 rounded-lg"
                 placeholder="Ingresa tu usuario"
                 required
               />
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">
                 Contraseña
               </label>
               <input
@@ -56,14 +56,14 @@ export default function Login() {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                className="input-fintage w-full px-4 py-3 rounded-lg"
                 placeholder="Ingresa tu contraseña"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-3">
+              <label className="block text-sm font-medium text-gray-300 mb-3">
                 Entrar como
               </label>
               <div className="grid grid-cols-2 gap-3">
@@ -72,8 +72,8 @@ export default function Login() {
                   onClick={() => setRole('user')}
                   className={`px-4 py-3 rounded-lg font-medium transition-all ${
                     role === 'user'
-                      ? 'bg-blue-600 text-white shadow-md'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      ? 'gradient-fintage-blue text-white shadow-md hover-glow-blue'
+                      : 'bg-gray-800 text-gray-300 hover:bg-gray-700 border border-gray-700'
                   }`}
                 >
                   USER
@@ -83,8 +83,8 @@ export default function Login() {
                   onClick={() => setRole('admin')}
                   className={`px-4 py-3 rounded-lg font-medium transition-all ${
                     role === 'admin'
-                      ? 'bg-blue-600 text-white shadow-md'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      ? 'gradient-fintage-blue text-white shadow-md hover-glow-blue'
+                      : 'bg-gray-800 text-gray-300 hover:bg-gray-700 border border-gray-700'
                   }`}
                 >
                   ADMIN
@@ -94,7 +94,7 @@ export default function Login() {
 
             <button
               type="submit"
-              className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white py-3 rounded-lg font-medium hover:from-blue-700 hover:to-blue-800 transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+              className="w-full gradient-fintage-blue text-white py-3 rounded-lg font-medium hover-glow-blue shadow-lg flex items-center justify-center gap-2"
             >
               <LogIn className="w-5 h-5" />
               Entrar

@@ -27,32 +27,32 @@ export default function UserDashboard() {
       return (
         <div className="space-y-6">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Semanas Operadas</h1>
-            <p className="text-gray-600">Historial de semanas completadas</p>
+            <h1 className="text-2xl font-bold text-white">Semanas Operadas</h1>
+            <p className="text-gray-400">Historial de semanas completadas</p>
           </div>
 
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
+          <div className="card-fintage rounded-lg p-6">
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-gray-200">
-                    <th className="px-4 py-3 text-sm font-semibold text-gray-700 text-left">Semana</th>
-                    <th className="px-4 py-3 text-sm font-semibold text-gray-700 text-center">Fechas</th>
-                    <th className="px-4 py-3 text-sm font-semibold text-gray-700 text-right">Capital</th>
-                    <th className="px-4 py-3 text-sm font-semibold text-gray-700 text-right">Ganancia</th>
-                    <th className="px-4 py-3 text-sm font-semibold text-gray-700 text-center">%</th>
+                  <tr className="border-b border-gray-800">
+                    <th className="px-4 py-3 text-sm font-semibold text-gray-400 text-left">Semana</th>
+                    <th className="px-4 py-3 text-sm font-semibold text-gray-400 text-center">Fechas</th>
+                    <th className="px-4 py-3 text-sm font-semibold text-gray-400 text-right">Capital</th>
+                    <th className="px-4 py-3 text-sm font-semibold text-gray-400 text-right">Ganancia</th>
+                    <th className="px-4 py-3 text-sm font-semibold text-gray-400 text-center">%</th>
                   </tr>
                 </thead>
                 <tbody>
                   {userWeeks.map((week, idx) => (
-                    <tr key={idx} className="border-b border-gray-100 hover:bg-gray-50">
-                      <td className="px-4 py-3 text-sm font-medium text-gray-900">Semana {week.weekNumber}</td>
-                      <td className="px-4 py-3 text-sm text-gray-600 text-center">
+                    <tr key={idx} className="border-b border-gray-800 hover:bg-gray-800 hover:bg-opacity-30">
+                      <td className="px-4 py-3 text-sm font-medium text-gray-200">Semana {week.weekNumber}</td>
+                      <td className="px-4 py-3 text-sm text-gray-400 text-center">
                         {week.startDate} a {week.endDate}
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-900 text-right">{formatCurrency(week.capital)}</td>
+                      <td className="px-4 py-3 text-sm text-gray-200 text-right">{formatCurrency(week.capital)}</td>
                       <td className="px-4 py-3 text-sm font-medium text-right">
-                        <span className={week.profit >= 0 ? 'text-green-600' : 'text-red-600'}>
+                        <span className={week.profit >= 0 ? 'text-green-400' : 'text-red-400'}>
                           {week.profit >= 0 ? '+' : ''}{formatCurrency(week.profit)}
                         </span>
                       </td>
@@ -73,11 +73,11 @@ export default function UserDashboard() {
       return (
         <div className="space-y-6">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Retiros</h1>
-            <p className="text-gray-600">Historial de solicitudes y retiros</p>
+            <h1 className="text-2xl font-bold text-white">Retiros</h1>
+            <p className="text-gray-400">Historial de solicitudes y retiros</p>
           </div>
 
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
+          <div className="card-fintage rounded-lg p-6">
             {mockWithdrawals.filter((w) => w.userId === 1).length === 0 ? (
               <div className="text-center py-12">
                 <p className="text-gray-500">No hay retiros pendientes</p>
@@ -86,27 +86,27 @@ export default function UserDashboard() {
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b border-gray-200">
-                      <th className="px-4 py-3 text-sm font-semibold text-gray-700 text-left">Monto</th>
-                      <th className="px-4 py-3 text-sm font-semibold text-gray-700 text-left">Fecha Solicitud</th>
-                      <th className="px-4 py-3 text-sm font-semibold text-gray-700 text-left">Estado</th>
+                    <tr className="border-b border-gray-800">
+                      <th className="px-4 py-3 text-sm font-semibold text-gray-400 text-left">Monto</th>
+                      <th className="px-4 py-3 text-sm font-semibold text-gray-400 text-left">Fecha Solicitud</th>
+                      <th className="px-4 py-3 text-sm font-semibold text-gray-400 text-left">Estado</th>
                     </tr>
                   </thead>
                   <tbody>
                     {mockWithdrawals
                       .filter((w) => w.userId === 1)
                       .map((withdrawal) => (
-                        <tr key={withdrawal.id} className="border-b border-gray-100 hover:bg-gray-50">
-                          <td className="px-4 py-3 text-sm font-medium text-gray-900">
+                        <tr key={withdrawal.id} className="border-b border-gray-800 hover:bg-gray-800 hover:bg-opacity-30">
+                          <td className="px-4 py-3 text-sm font-medium text-gray-200">
                             {formatCurrency(withdrawal.amount)}
                           </td>
-                          <td className="px-4 py-3 text-sm text-gray-600">{withdrawal.requestDate}</td>
+                          <td className="px-4 py-3 text-sm text-gray-400">{withdrawal.requestDate}</td>
                           <td className="px-4 py-3 text-sm">
                             <span
-                              className={`inline-block px-2 py-1 rounded text-xs font-medium ${
+                              className={`inline-block px-2 py-1 rounded text-xs font-medium border ${
                                 withdrawal.status === 'pending'
-                                  ? 'bg-yellow-100 text-yellow-800'
-                                  : 'bg-green-100 text-green-800'
+                                  ? 'bg-yellow-900 bg-opacity-20 text-yellow-400 border-yellow-500 border-opacity-30'
+                                  : 'bg-green-900 bg-opacity-20 text-green-400 border-green-500 border-opacity-30'
                               }`}
                             >
                               {withdrawal.status === 'pending' ? 'Pendiente' : 'Completado'}
@@ -126,8 +126,8 @@ export default function UserDashboard() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Mi Dashboard</h1>
-          <p className="text-gray-600">Resumen de tu inversión</p>
+          <h1 className="text-2xl font-bold text-white">Mi Dashboard</h1>
+          <p className="text-gray-400">Resumen de tu inversión</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -156,41 +156,41 @@ export default function UserDashboard() {
         <ChartPanel data={mockChartData} title="Crecimiento de Capital" />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Información</h3>
+          <div className="card-fintage rounded-lg p-6">
+            <h3 className="text-lg font-semibold text-white mb-4">Información</h3>
             <div className="space-y-4">
-              <div className="pb-4 border-b border-gray-100">
-                <p className="text-sm text-gray-500 mb-1">Capital Inicial</p>
-                <p className="text-sm font-medium text-gray-900">{formatCurrency(mockUserData.initialCapital)}</p>
+              <div className="pb-4 border-b border-gray-800">
+                <p className="text-sm text-gray-400 mb-1">Capital Inicial</p>
+                <p className="text-sm font-medium text-gray-200">{formatCurrency(mockUserData.initialCapital)}</p>
               </div>
-              <div className="pb-4 border-b border-gray-100">
-                <p className="text-sm text-gray-500 mb-1">Última Actualización</p>
-                <p className="text-sm font-medium text-gray-900">{mockUserData.lastUpdate}</p>
+              <div className="pb-4 border-b border-gray-800">
+                <p className="text-sm text-gray-400 mb-1">Última Actualización</p>
+                <p className="text-sm font-medium text-gray-200">{mockUserData.lastUpdate}</p>
               </div>
               <div className="pb-4">
-                <p className="text-sm text-gray-500 mb-1">Próxima Distribución</p>
-                <p className="text-sm font-medium text-gray-900">{mockUserData.nextDistribution}</p>
+                <p className="text-sm text-gray-400 mb-1">Próxima Distribución</p>
+                <p className="text-sm font-medium text-gray-200">{mockUserData.nextDistribution}</p>
               </div>
               <div>
-                <p className="text-sm text-gray-500 mb-1">Estado</p>
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                <p className="text-sm text-gray-400 mb-1">Estado</p>
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-900 bg-opacity-20 text-green-400 border border-green-500 border-opacity-30">
                   Activo
                 </span>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">Semanas Operadas</h3>
+          <div className="card-fintage rounded-lg p-6">
+            <h3 className="text-lg font-semibold text-white mb-4">Semanas Operadas</h3>
             <div className="space-y-3">
               {mockWeeks
                 .filter((w) => w.status === 'completed')
                 .slice(0, 3)
                 .map((week) => (
-                  <div key={week.id} className="flex items-center justify-between py-3 border-b border-gray-100">
+                  <div key={week.id} className="flex items-center justify-between py-3 border-b border-gray-800">
                     <div>
-                      <p className="text-sm font-medium text-gray-900">Semana {week.weekNumber}</p>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-sm font-medium text-gray-200">Semana {week.weekNumber}</p>
+                      <p className="text-xs text-gray-400">
                         {week.startDate} a {week.endDate}
                       </p>
                     </div>

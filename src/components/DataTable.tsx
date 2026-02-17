@@ -32,11 +32,11 @@ export default function DataTable<T extends Record<string, unknown>>({
     <div className="overflow-x-auto">
       <table className="w-full">
         <thead>
-          <tr className="border-b border-gray-200">
+          <tr className="border-b border-gray-800">
             {columns.map((col) => (
               <th
                 key={String(col.key)}
-                className={`px-4 py-3 text-sm font-semibold text-gray-700 text-${col.align || 'left'}`}
+                className={`px-4 py-3 text-sm font-semibold text-gray-400 text-${col.align || 'left'}`}
               >
                 {col.label}
               </th>
@@ -47,12 +47,12 @@ export default function DataTable<T extends Record<string, unknown>>({
           {data.map((row, idx) => (
             <tr
               key={row[keyField as string] || idx}
-              className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
+              className="border-b border-gray-800 hover:bg-gray-800 hover:bg-opacity-30 transition-colors"
             >
               {columns.map((col) => (
                 <td
                   key={String(col.key)}
-                  className={`px-4 py-3 text-sm text-gray-900 text-${col.align || 'left'}`}
+                  className={`px-4 py-3 text-sm text-gray-200 text-${col.align || 'left'}`}
                 >
                   {col.render ? col.render(row[col.key], row) : String(row[col.key])}
                 </td>
