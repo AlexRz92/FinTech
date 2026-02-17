@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Wallet, LogIn, Loader2 } from 'lucide-react';
+import { signIn } from '../lib/auth';
 
 export default function Login() {
   const navigate = useNavigate();
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -14,14 +15,23 @@ export default function Login() {
     setError('');
     setLoading(true);
 
-    setTimeout(() => {
-      if (username.toLowerCase().includes('admin')) {
+    const { user, error: authError } = await signIn(email, password);
+
+    if (authError) {
+      setError(authError);
+      setLoading(false);
+      return;
+    }
+
+    if (user) {
+      if (user.role === 'ADMIN') {
         navigate('/admin/dashboard');
       } else {
         navigate('/user/dashboard');
       }
-      setLoading(false);
-    }, 800);
+    }
+
+    setLoading(false);
   };
 
   return (
@@ -39,14 +49,14 @@ export default function Login() {
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label htmlFor="username" className="block text-sm font-medium text-gray-300 mb-2">
+              <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
                 Usuario
               </label>
               <input
-                id="username"
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 className="input-fintage w-full px-4 py-3 rounded-lg"
                 placeholder="Ingresa tu usuario"
                 required

@@ -2,6 +2,7 @@ import { ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Topbar from './Topbar';
+import { signOut } from '../../lib/auth';
 
 interface LayoutProps {
   children: ReactNode;
@@ -12,7 +13,8 @@ interface LayoutProps {
 export default function Layout({ children, userRole, userName }: LayoutProps) {
   const navigate = useNavigate();
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await signOut();
     navigate('/login');
   };
 

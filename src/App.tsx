@@ -7,6 +7,7 @@ import AdminUsers from './pages/admin/Users';
 import UserDashboard from './pages/user/Dashboard';
 import UserWeeks from './pages/user/Weeks';
 import UserWithdrawals from './pages/user/Withdrawals';
+import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
   return (
@@ -14,13 +15,62 @@ function App() {
       <Routes>
         <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/admin/dashboard" element={<AdminDashboard />} />
-        <Route path="/admin/weeks" element={<AdminWeeks />} />
-        <Route path="/admin/capital" element={<AdminCapital />} />
-        <Route path="/admin/users" element={<AdminUsers />} />
-        <Route path="/user/dashboard" element={<UserDashboard />} />
-        <Route path="/user/weeks" element={<UserWeeks />} />
-        <Route path="/user/withdrawals" element={<UserWithdrawals />} />
+        <Route
+          path="/admin/dashboard"
+          element={
+            <ProtectedRoute requiredRole="ADMIN">
+              <AdminDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/weeks"
+          element={
+            <ProtectedRoute requiredRole="ADMIN">
+              <AdminWeeks />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/capital"
+          element={
+            <ProtectedRoute requiredRole="ADMIN">
+              <AdminCapital />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/users"
+          element={
+            <ProtectedRoute requiredRole="ADMIN">
+              <AdminUsers />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/user/dashboard"
+          element={
+            <ProtectedRoute requiredRole="USER">
+              <UserDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/user/weeks"
+          element={
+            <ProtectedRoute requiredRole="USER">
+              <UserWeeks />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/user/withdrawals"
+          element={
+            <ProtectedRoute requiredRole="USER">
+              <UserWithdrawals />
+            </ProtectedRoute>
+          }
+        />
 
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
