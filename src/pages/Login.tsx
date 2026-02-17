@@ -23,15 +23,17 @@ export default function Login() {
       return;
     }
 
-    if (user) {
-      if (user.role === 'ADMIN') {
-        navigate('/admin/dashboard');
-      } else {
-        navigate('/user/dashboard');
-      }
+    if (!user) {
+      setError('Credenciales inválidas');
+      setLoading(false);
+      return;
     }
 
-    setLoading(false);
+    if (user.role === 'ADMIN') {
+      navigate('/admin/dashboard');
+    } else {
+      navigate('/user/dashboard');
+    }
   };
 
   return (

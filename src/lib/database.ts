@@ -226,3 +226,13 @@ export async function getCapitalForUser(userId: string) {
 
   return { deposits, withdrawals, net: deposits - withdrawals };
 }
+
+export async function getProfilesWithCapital() {
+  const { data: profiles, error: profileError } = await supabase
+    .from('profiles')
+    .select('id, email, role, capital_net');
+
+  if (profileError) return [];
+
+  return profiles || [];
+}
