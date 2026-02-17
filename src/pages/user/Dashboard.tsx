@@ -1,129 +1,20 @@
-import { useLocation } from 'react-router-dom';
 import Layout from '../../components/layout/Layout';
 import CardMetric from '../../components/CardMetric';
-import DataTable from '../../components/DataTable';
 import BadgePnL from '../../components/BadgePnL';
 import ChartPanel from '../../components/ChartPanel';
-import { mockUserData, mockWeeks, mockWithdrawals, mockChartData } from '../../lib/mockData';
-import { DollarSign, TrendingUp, Wallet, Calendar } from 'lucide-react';
+import { getUserDashboardData, getWeeksData, getChartData } from '../../lib/mockData';
+import { DollarSign, TrendingUp, Calendar } from 'lucide-react';
 
 export default function UserDashboard() {
-  const location = useLocation();
-  const profitPercentage = ((mockUserData.totalProfit / mockUserData.initialCapital) * 100).toFixed(1);
+  const userData = getUserDashboardData();
+  const weeks = getWeeksData();
+  const chartData = getChartData();
+  const profitPercentage = ((userData.totalProfit / userData.initialCapital) * 100).toFixed(1);
 
   const formatCurrency = (value: number) => `$${value.toLocaleString('es-ES')}`;
 
-  const userWeeks = mockWeeks.map((week) => ({
-    weekNumber: week.weekNumber,
-    startDate: week.startDate,
-    endDate: week.endDate,
-    capital: (week.totalCapitalAdmin + week.totalCapitalUser) / (42 + 1),
-    profit: (week.pnlAdmin + week.pnlUser) / (42 + 1),
-    percentage: week.percentage,
-  }));
-
-  const renderContent = () => {
-    if (location.pathname === '/user/weeks') {
-      return (
-        <div className="space-y-6">
-          <div>
-            <h1 className="text-2xl font-bold text-white">Semanas Operadas</h1>
-            <p className="text-gray-400">Historial de semanas completadas</p>
-          </div>
-
-          <div className="card-fintage rounded-lg p-6">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-gray-800">
-                    <th className="px-4 py-3 text-sm font-semibold text-gray-400 text-left">Semana</th>
-                    <th className="px-4 py-3 text-sm font-semibold text-gray-400 text-center">Fechas</th>
-                    <th className="px-4 py-3 text-sm font-semibold text-gray-400 text-right">Capital</th>
-                    <th className="px-4 py-3 text-sm font-semibold text-gray-400 text-right">Ganancia</th>
-                    <th className="px-4 py-3 text-sm font-semibold text-gray-400 text-center">%</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {userWeeks.map((week, idx) => (
-                    <tr key={idx} className="border-b border-gray-800 hover:bg-gray-800 hover:bg-opacity-30">
-                      <td className="px-4 py-3 text-sm font-medium text-gray-200">Semana {week.weekNumber}</td>
-                      <td className="px-4 py-3 text-sm text-gray-400 text-center">
-                        {week.startDate} a {week.endDate}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-200 text-right">{formatCurrency(week.capital)}</td>
-                      <td className="px-4 py-3 text-sm font-medium text-right">
-                        <span className={week.profit >= 0 ? 'text-green-400' : 'text-red-400'}>
-                          {week.profit >= 0 ? '+' : ''}{formatCurrency(week.profit)}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-sm text-center">
-                        <BadgePnL value={week.percentage} showIcon={false} size="sm" />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      );
-    }
-
-    if (location.pathname === '/user/withdrawals') {
-      return (
-        <div className="space-y-6">
-          <div>
-            <h1 className="text-2xl font-bold text-white">Retiros</h1>
-            <p className="text-gray-400">Historial de solicitudes y retiros</p>
-          </div>
-
-          <div className="card-fintage rounded-lg p-6">
-            {mockWithdrawals.filter((w) => w.userId === 1).length === 0 ? (
-              <div className="text-center py-12">
-                <p className="text-gray-500">No hay retiros pendientes</p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-gray-800">
-                      <th className="px-4 py-3 text-sm font-semibold text-gray-400 text-left">Monto</th>
-                      <th className="px-4 py-3 text-sm font-semibold text-gray-400 text-left">Fecha Solicitud</th>
-                      <th className="px-4 py-3 text-sm font-semibold text-gray-400 text-left">Estado</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {mockWithdrawals
-                      .filter((w) => w.userId === 1)
-                      .map((withdrawal) => (
-                        <tr key={withdrawal.id} className="border-b border-gray-800 hover:bg-gray-800 hover:bg-opacity-30">
-                          <td className="px-4 py-3 text-sm font-medium text-gray-200">
-                            {formatCurrency(withdrawal.amount)}
-                          </td>
-                          <td className="px-4 py-3 text-sm text-gray-400">{withdrawal.requestDate}</td>
-                          <td className="px-4 py-3 text-sm">
-                            <span
-                              className={`inline-block px-2 py-1 rounded text-xs font-medium border ${
-                                withdrawal.status === 'pending'
-                                  ? 'bg-yellow-900 bg-opacity-20 text-yellow-400 border-yellow-500 border-opacity-30'
-                                  : 'bg-green-900 bg-opacity-20 text-green-400 border-green-500 border-opacity-30'
-                              }`}
-                            >
-                              {withdrawal.status === 'pending' ? 'Pendiente' : 'Completado'}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        </div>
-      );
-    }
-
-    return (
+  return (
+    <Layout userRole="user" userName={userData.name}>
       <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-bold text-white">Mi Dashboard</h1>
@@ -133,27 +24,27 @@ export default function UserDashboard() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <CardMetric
             title="Capital Actual"
-            value={formatCurrency(mockUserData.currentCapital)}
+            value={formatCurrency(userData.currentCapital)}
             icon={DollarSign}
-            trend={{ value: mockUserData.weeklyReturn, isPositive: true }}
+            trend={{ value: userData.weeklyReturn, isPositive: true }}
           />
 
           <CardMetric
             title="Ganancia Acumulada"
-            value={formatCurrency(mockUserData.totalProfit)}
+            value={formatCurrency(userData.totalProfit)}
             icon={TrendingUp}
             subtitle={`+${profitPercentage}% ROI`}
           />
 
           <CardMetric
             title="% Última Semana"
-            value={`${mockUserData.weeklyReturn}%`}
+            value={`${userData.weeklyReturn}%`}
             icon={Calendar}
             subtitle="Retorno reciente"
           />
         </div>
 
-        <ChartPanel data={mockChartData} title="Crecimiento de Capital" />
+        <ChartPanel data={chartData} title="Crecimiento de Capital" />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="card-fintage rounded-lg p-6">
@@ -161,15 +52,15 @@ export default function UserDashboard() {
             <div className="space-y-4">
               <div className="pb-4 border-b border-gray-800">
                 <p className="text-sm text-gray-400 mb-1">Capital Inicial</p>
-                <p className="text-sm font-medium text-gray-200">{formatCurrency(mockUserData.initialCapital)}</p>
+                <p className="text-sm font-medium text-gray-200">{formatCurrency(userData.initialCapital)}</p>
               </div>
               <div className="pb-4 border-b border-gray-800">
                 <p className="text-sm text-gray-400 mb-1">Última Actualización</p>
-                <p className="text-sm font-medium text-gray-200">{mockUserData.lastUpdate}</p>
+                <p className="text-sm font-medium text-gray-200">{userData.lastUpdate}</p>
               </div>
               <div className="pb-4">
                 <p className="text-sm text-gray-400 mb-1">Próxima Distribución</p>
-                <p className="text-sm font-medium text-gray-200">{mockUserData.nextDistribution}</p>
+                <p className="text-sm font-medium text-gray-200">{userData.nextDistribution}</p>
               </div>
               <div>
                 <p className="text-sm text-gray-400 mb-1">Estado</p>
@@ -183,7 +74,7 @@ export default function UserDashboard() {
           <div className="card-fintage rounded-lg p-6">
             <h3 className="text-lg font-semibold text-white mb-4">Semanas Operadas</h3>
             <div className="space-y-3">
-              {mockWeeks
+              {weeks
                 .filter((w) => w.status === 'completed')
                 .slice(0, 3)
                 .map((week) => (
@@ -201,8 +92,6 @@ export default function UserDashboard() {
           </div>
         </div>
       </div>
-    );
-  };
-
-  return <Layout userRole="user" userName={mockUserData.name}>{renderContent()}</Layout>;
+    </Layout>
+  );
 }

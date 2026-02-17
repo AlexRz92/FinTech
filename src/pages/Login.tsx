@@ -1,21 +1,27 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Wallet, LogIn } from 'lucide-react';
+import { Wallet, LogIn, Loader2 } from 'lucide-react';
 
 export default function Login() {
   const navigate = useNavigate();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState<'admin' | 'user'>('user');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
+    setLoading(true);
 
-    if (role === 'admin') {
-      navigate('/admin/dashboard');
-    } else {
-      navigate('/user/dashboard');
-    }
+    setTimeout(() => {
+      if (username.toLowerCase().includes('admin')) {
+        navigate('/admin/dashboard');
+      } else {
+        navigate('/user/dashboard');
+      }
+      setLoading(false);
+    }, 800);
   };
 
   return (
@@ -28,8 +34,8 @@ export default function Login() {
             </div>
           </div>
 
-          <h1 className="text-3xl font-bold text-center text-white mb-2">Fintage</h1>
-          <p className="text-center text-gray-400 mb-8">Private Capital Management</p>
+          <h1 className="text-3xl font-bold text-center text-white mb-2">FinTech</h1>
+          <p className="text-center text-gray-400 mb-8">Tecnología Financiera</p>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
@@ -44,6 +50,7 @@ export default function Login() {
                 className="input-fintage w-full px-4 py-3 rounded-lg"
                 placeholder="Ingresa tu usuario"
                 required
+                disabled={loading}
               />
             </div>
 
@@ -59,51 +66,38 @@ export default function Login() {
                 className="input-fintage w-full px-4 py-3 rounded-lg"
                 placeholder="Ingresa tu contraseña"
                 required
+                disabled={loading}
               />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-3">
-                Entrar como
-              </label>
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => setRole('user')}
-                  className={`px-4 py-3 rounded-lg font-medium transition-all ${
-                    role === 'user'
-                      ? 'gradient-fintage-blue text-white shadow-md hover-glow-blue'
-                      : 'bg-gray-800 text-gray-300 hover:bg-gray-700 border border-gray-700'
-                  }`}
-                >
-                  USER
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setRole('admin')}
-                  className={`px-4 py-3 rounded-lg font-medium transition-all ${
-                    role === 'admin'
-                      ? 'gradient-fintage-blue text-white shadow-md hover-glow-blue'
-                      : 'bg-gray-800 text-gray-300 hover:bg-gray-700 border border-gray-700'
-                  }`}
-                >
-                  ADMIN
-                </button>
-              </div>
             </div>
 
             <button
               type="submit"
-              className="w-full gradient-fintage-blue text-white py-3 rounded-lg font-medium hover-glow-blue shadow-lg flex items-center justify-center gap-2"
+              disabled={loading}
+              className="w-full gradient-fintage-blue text-white py-3 rounded-lg font-medium hover-glow-blue shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <LogIn className="w-5 h-5" />
-              Entrar
+              {loading ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Ingresando...
+                </>
+              ) : (
+                <>
+                  <LogIn className="w-5 h-5" />
+                  Ingresar
+                </>
+              )}
             </button>
-          </form>
 
-          <p className="text-center text-sm text-gray-500 mt-6">
-            Versión 1.0.0 - Solo Frontend
-          </p>
+            {error && (
+              <p className="text-red-400 text-sm text-center mt-2">
+                {error}
+              </p>
+            )}
+
+            <p className="text-center text-xs text-gray-500 mt-4">
+              Acceso privado. Autenticación requerida.
+            </p>
+          </form>
         </div>
       </div>
     </div>

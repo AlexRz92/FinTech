@@ -207,3 +207,11 @@ export const mockChartData = [
   { week: 'W4', adminCapital: 151123, userCapital: 89974 },
   { week: 'W5', adminCapital: 151123, userCapital: 89974 },
 ];
+
+export const getAdminDashboardData = () => mockAdminData;
+export const getUserDashboardData = () => mockUserData;
+export const getWeeksData = () => mockWeeks;
+export const getUsersData = () => mockUsers;
+export const getWithdrawalsData = () => mockWithdrawals;
+export const getCapitalHistoryData = () => mockCapitalHistory;
+export const getChartData = () => mockChartData;
