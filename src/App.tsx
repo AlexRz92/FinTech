@@ -6,6 +6,7 @@ import AdminCapital from './pages/admin/Capital';
 import AdminUsers from './pages/admin/Users';
 import UserDashboard from './pages/user/Dashboard';
 import UserWeeks from './pages/user/Weeks';
+import UserCapital from './pages/user/Capital';
 import UserWithdrawals from './pages/user/Withdrawals';
 import ProtectedRoute from './components/ProtectedRoute';
 
@@ -60,6 +61,14 @@ function App() {
           element={
             <ProtectedRoute requiredRole="USER">
               <UserWeeks />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/user/capital"
+          element={
+            <ProtectedRoute requiredRole="USER">
+              <UserCapital />
             </ProtectedRoute>
           }
         />

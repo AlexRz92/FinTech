@@ -19,6 +19,7 @@ export default function Sidebar({ userRole, onLogout }: SidebarProps) {
   const userLinks = [
     { to: '/user/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { to: '/user/weeks', icon: Calendar, label: 'Semanas' },
+    { to: '/user/capital', icon: Wallet, label: 'Capital' },
     { to: '/user/withdrawals', icon: TrendingDown, label: 'Retiros' },
   ];
 

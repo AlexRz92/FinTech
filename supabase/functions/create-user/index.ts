@@ -124,18 +124,11 @@ Deno.serve(async (req: Request) => {
 
     const accessToken = authHeader.substring(7);
     const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
-    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") || "";
     const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
 
-    // Verificar que el usuario actual es ADMIN
     const adminClient = createClient(supabaseUrl, supabaseServiceRoleKey);
-    const authClient = createClient(supabaseUrl, supabaseAnonKey, {
-      global: {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      },
-    });
 
-    const { data: { user: currentUser }, error: authError } = await authClient.auth.getUser();
+    const { data: { user: currentUser }, error: authError } = await adminClient.auth.getUser(accessToken);
 
     if (authError || !currentUser) {
       const errorResponse: ErrorResponse = {
@@ -276,13 +269,56 @@ Deno.serve(async (req: Request) => {
 
     console.log(`[AUTH_CREATE] ✓ EXITO - Usuario Auth creado: ${newAuthUser.user.id}`);
 
-    // RETORNAR AQUI - NO INSERTAR EN PROFILES TODAVIA (PRUEBA 1)
+    // STEP 2: PROFILE_CREATE
+    console.log("[PROFILE_CREATE] Insertando perfil del usuario...");
+    const { data: newProfile, error: createProfileError } = await adminClient
+      .from("profiles")
+      .insert({
+        id: newAuthUser.user.id,
+        email: payload.email,
+        name: payload.name,
+        username: payload.username,
+        role: "USER",
+      })
+      .select()
+      .single();
+
+    if (createProfileError) {
+      const errorResponse: ErrorResponse = {
+        ok: false,
+        step: "PROFILE_CREATE",
+        message: createProfileError.message || "Error al crear perfil",
+        details: createProfileError.code,
+        code: createProfileError.code,
+      };
+
+      console.error("[PROFILE_CREATE] FALLO", {
+        userId: newAuthUser.user.id,
+        payload: sanitizePayload(payload),
+        error: errorResponse,
+      });
+
+      return new Response(JSON.stringify(errorResponse), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    console.log(`[PROFILE_CREATE] ✓ EXITO - Perfil creado para: ${newAuthUser.user.id}`);
+
     return new Response(
       JSON.stringify({
         ok: true,
-        step: "AUTH_CREATE_OK",
+        step: "USER_CREATED",
         userId: newAuthUser.user.id,
-        message: "Usuario Auth creado exitosamente. Prueba 1 completa.",
+        message: "Usuario creado exitosamente",
+        user: {
+          id: newProfile.id,
+          email: newProfile.email,
+          name: newProfile.name,
+          username: newProfile.username,
+          role: newProfile.role,
+        },
       }),
       {
         status: 201,

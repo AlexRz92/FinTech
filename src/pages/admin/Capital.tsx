@@ -1,11 +1,21 @@
 import { useState, useEffect } from 'react';
-import { Loader2, Plus } from 'lucide-react';
+import { Loader2, Plus, AlertCircle } from 'lucide-react';
 import Layout from '../../components/layout/Layout';
 import Modal from '../../components/Modal';
-import { getCapitalLedger, addCapitalEntry, getAdminId, getUserId } from '../../lib/database';
+import { getCapitalLedger, addCapitalEntry } from '../../lib/database';
+import { supabase } from '../../lib/supabaseClient';
+
+interface User {
+  id: string;
+  name: string | null;
+  email: string | null;
+  username: string | null;
+  role: 'ADMIN' | 'USER';
+}
 
 interface CapitalEntry {
   id: string;
+  user_id: string;
   type: 'DEPOSIT' | 'WITHDRAWAL';
   amount: number;
   note: string | null;
@@ -23,14 +33,65 @@ export default function AdminCapital() {
   const [activeAction, setActiveAction] = useState<CapitalAction>(null);
   const [amount, setAmount] = useState('');
   const [note, setNote] = useState('');
+  const [adminUser, setAdminUser] = useState<User | null>(null);
+  const [userList, setUserList] = useState<User[]>([]);
+  const [selectedUserId, setSelectedUserId] = useState<string>('');
 
   useEffect(() => {
-    loadEntries();
+    loadInitialData();
   }, []);
+
+  const getUserName = (userId: string) => {
+    if (adminUser?.id === userId) {
+      return `${adminUser?.name || 'Admin'}`;
+    }
+    const user = userList.find((u) => u.id === userId);
+    return user ? (user.name || user.email || user.username || 'Usuario') : 'Desconocido';
+  };
+
+  async function loadInitialData() {
+    try {
+      setLoading(true);
+      setError('');
+
+      await loadUsers();
+      await loadEntries();
+    } catch (err) {
+      setError('Error al cargar datos');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function loadUsers() {
+    try {
+      const { data: profiles, error: profileError } = await supabase
+        .from('profiles')
+        .select('id, name, email, username, role')
+        .order('role', { ascending: true });
+
+      if (profileError) throw profileError;
+
+      const admin = profiles?.find((p) => p.role === 'ADMIN');
+      const users = profiles?.filter((p) => p.role === 'USER') || [];
+
+      if (admin) setAdminUser(admin as User);
+      setUserList(users as User[]);
+
+      if (users.length === 1) {
+        setSelectedUserId(users[0].id);
+      } else if (users.length > 1) {
+        setSelectedUserId(users[0].id);
+      }
+    } catch (err) {
+      console.error('Error loading users:', err);
+      throw err;
+    }
+  }
 
   async function loadEntries() {
     try {
-      setLoading(true);
       const data = await getCapitalLedger();
       setEntries(
         data.map((entry) => ({
@@ -41,13 +102,17 @@ export default function AdminCapital() {
     } catch (err) {
       setError('Error al cargar historial');
       console.error(err);
-    } finally {
-      setLoading(false);
     }
   }
 
   async function handleAddCapital() {
     if (!amount || !activeAction) return;
+
+    const parsedAmount = parseFloat(amount);
+    if (isNaN(parsedAmount) || parsedAmount <= 0) {
+      setError('El monto debe ser mayor a 0');
+      return;
+    }
 
     try {
       setSubmitting(true);
@@ -57,28 +122,28 @@ export default function AdminCapital() {
       let type: 'DEPOSIT' | 'WITHDRAWAL';
 
       if (activeAction === 'admin_deposit') {
-        userId = await getAdminId();
+        userId = adminUser?.id || null;
         type = 'DEPOSIT';
       } else if (activeAction === 'admin_withdrawal') {
-        userId = await getAdminId();
+        userId = adminUser?.id || null;
         type = 'WITHDRAWAL';
       } else if (activeAction === 'user_deposit') {
-        userId = await getUserId();
+        userId = selectedUserId || null;
         type = 'DEPOSIT';
       } else if (activeAction === 'user_withdrawal') {
-        userId = await getUserId();
+        userId = selectedUserId || null;
         type = 'WITHDRAWAL';
       }
 
       if (!userId) {
-        setError('Usuario no encontrado');
+        setError('Usuario no disponible para esta operación');
         return;
       }
 
       await addCapitalEntry({
         user_id: userId,
         type,
-        amount: parseFloat(amount),
+        amount: parsedAmount,
         note: note || undefined,
       });
 
@@ -89,7 +154,8 @@ export default function AdminCapital() {
       await loadEntries();
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
-      setError('Error al registrar movimiento');
+      const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
+      setError(`Error al registrar movimiento: ${errorMessage}`);
       console.error(err);
     } finally {
       setSubmitting(false);
@@ -147,8 +213,12 @@ export default function AdminCapital() {
         </div>
 
         {error && (
-          <div className="p-4 bg-red-900 bg-opacity-20 border border-red-500 border-opacity-30 rounded-lg text-red-400">
-            {error}
+          <div className="bg-red-900 bg-opacity-20 border border-red-500 border-opacity-30 rounded-lg p-4 flex gap-3">
+            <AlertCircle size={20} className="text-red-400 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="text-sm font-medium text-red-300">Error</p>
+              <p className="text-xs text-red-400 mt-1">{error}</p>
+            </div>
           </div>
         )}
 
@@ -164,25 +234,48 @@ export default function AdminCapital() {
             'user_deposit' as CapitalAction,
             'admin_withdrawal' as CapitalAction,
             'user_withdrawal' as CapitalAction,
-          ].map((action) => (
-            <button
-              key={action}
-              onClick={() => setActiveAction(action)}
-              className="card-fintage p-6 rounded-lg hover:border-blue-500 hover:border-opacity-50 transition-colors text-left"
-            >
-              <div className="flex items-start justify-between">
-                <div>
-                  <div className="text-lg font-semibold text-white">
-                    {getActionLabel(action)}
+          ].map((action) => {
+            const isUserAction = action?.includes('user');
+            const isDisabled = isUserAction && userList.length === 0;
+
+            return (
+              <button
+                key={action}
+                onClick={() => setActiveAction(action)}
+                disabled={isDisabled}
+                className={`card-fintage p-6 rounded-lg transition-colors text-left ${
+                  isDisabled
+                    ? 'opacity-50 cursor-not-allowed'
+                    : 'hover:border-blue-500 hover:border-opacity-50'
+                }`}
+              >
+                <div className="flex items-start justify-between">
+                  <div>
+                    <div className="text-lg font-semibold text-white">
+                      {getActionLabel(action)}
+                    </div>
+                    <p className="text-sm text-gray-400 mt-1">
+                      {isUserAction && userList.length > 0 ? (
+                        <>
+                          {getActionDescription(action)}
+                          <br />
+                          <span className="text-blue-400 mt-1 inline-block">
+                            Usuario: {selectedUserId && userList.find(u => u.id === selectedUserId)?.name || userList[0]?.name}
+                          </span>
+                        </>
+                      ) : (
+                        getActionDescription(action)
+                      )}
+                      {isUserAction && userList.length === 0 && (
+                        <span className="text-red-400 block mt-1">Sin usuarios disponibles</span>
+                      )}
+                    </p>
                   </div>
-                  <p className="text-sm text-gray-400 mt-1">
-                    {getActionDescription(action)}
-                  </p>
+                  <Plus className="w-5 h-5 text-gray-400" />
                 </div>
-                <Plus className="w-5 h-5 text-gray-400" />
-              </div>
-            </button>
-          ))}
+              </button>
+            );
+          })}
         </div>
 
         <div className="card-fintage rounded-lg p-6">
@@ -193,6 +286,9 @@ export default function AdminCapital() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-gray-800">
+                  <th className="px-4 py-3 text-sm font-semibold text-gray-400 text-left">
+                    Usuario
+                  </th>
                   <th className="px-4 py-3 text-sm font-semibold text-gray-400 text-left">
                     Tipo
                   </th>
@@ -210,7 +306,7 @@ export default function AdminCapital() {
               <tbody>
                 {entries.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="px-4 py-6 text-center text-gray-400">
+                    <td colSpan={5} className="px-4 py-6 text-center text-gray-400">
                       No hay movimientos registrados
                     </td>
                   </tr>
@@ -220,6 +316,9 @@ export default function AdminCapital() {
                       key={entry.id}
                       className="border-b border-gray-800 hover:bg-gray-800 hover:bg-opacity-30"
                     >
+                      <td className="px-4 py-3 text-sm text-gray-300">
+                        {getUserName(entry.user_id)}
+                      </td>
                       <td className="px-4 py-3 text-sm text-gray-200 capitalize">
                         {entry.type === 'DEPOSIT' ? 'Depósito' : 'Retiro'}
                       </td>
@@ -260,6 +359,32 @@ export default function AdminCapital() {
           title={getActionLabel(activeAction)}
         >
           <div className="space-y-4">
+            {activeAction?.includes('user') && userList.length > 1 && (
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">
+                  Usuario
+                </label>
+                <select
+                  value={selectedUserId}
+                  onChange={(e) => setSelectedUserId(e.target.value)}
+                  className="input-fintage w-full px-4 py-2 rounded-lg"
+                  disabled={submitting}
+                >
+                  {userList.map((user) => (
+                    <option key={user.id} value={user.id}>
+                      {user.name || user.email || user.username}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {activeAction?.includes('user') && userList.length === 1 && (
+              <div className="p-3 bg-blue-900 bg-opacity-20 border border-blue-500 border-opacity-30 rounded text-blue-400 text-sm">
+                Usuario: {userList[0]?.name || userList[0]?.email}
+              </div>
+            )}
+
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-1">
                 Monto ($)
@@ -274,6 +399,7 @@ export default function AdminCapital() {
                 disabled={submitting}
               />
             </div>
+
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-1">
                 Nota (opcional)
@@ -287,6 +413,13 @@ export default function AdminCapital() {
                 disabled={submitting}
               />
             </div>
+
+            {error && (
+              <div className="p-3 bg-red-900 bg-opacity-20 border border-red-500 border-opacity-30 rounded text-red-400 text-sm">
+                {error}
+              </div>
+            )}
+
             <div className="flex gap-3 pt-4">
               <button
                 onClick={() => {
