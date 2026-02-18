@@ -3,29 +3,21 @@ import { Loader2 } from 'lucide-react';
 import Layout from '../../components/layout/Layout';
 import CardMetric from '../../components/CardMetric';
 import BadgePnL from '../../components/BadgePnL';
-import ChartPanel from '../../components/ChartPanel';
 import { DollarSign, TrendingUp, Calendar } from 'lucide-react';
+import { supabase } from '../../lib/supabaseClient';
 import {
   getWeeksWithResults,
-  getFinancialState,
-  getCapitalForUser,
   getCurrentUser,
-  getUserId,
 } from '../../lib/database';
-
-interface ChartDataPoint {
-  name: string;
-  valor: number;
-}
 
 export default function UserDashboard() {
   const [loading, setLoading] = useState(true);
   const [currentCapital, setCurrentCapital] = useState(0);
   const [initialCapital, setInitialCapital] = useState(0);
-  const [lastWeekPercentage, setLastWeekPercentage] = useState(0);
-  const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
+  const [weekPercentageChange, setWeekPercentageChange] = useState(0);
   const [weeks, setWeeks] = useState<any[]>([]);
   const [userName, setUserName] = useState('Usuario');
+  const [lastWeekPercentage, setLastWeekPercentage] = useState(0);
 
   useEffect(() => {
     loadUserDashboardData();
@@ -43,34 +35,68 @@ export default function UserDashboard() {
 
       setUserName(user.email.split('@')[0]);
 
-      const userId = await getUserId();
-      if (!userId) {
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('capital_net')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      if (profileError || !profile) {
+        console.error('Error loading profile:', profileError);
         setLoading(false);
         return;
       }
 
-      const capital = await getCapitalForUser(userId);
-      setInitialCapital(capital.net);
+      const capitalActual = Number(profile.capital_net || 0);
+      setCurrentCapital(capitalActual);
 
-      const state = await getFinancialState();
-      const userCap = state?.user_capital || 0;
-      setCurrentCapital(userCap);
+      const { data: ledgerEntries, error: ledgerError } = await supabase
+        .from('capital_ledger')
+        .select('type, amount')
+        .eq('user_id', user.id)
+        .neq('type', 'PERFORMANCE_FEE');
+
+      if (ledgerError) {
+        console.error('Error loading ledger:', ledgerError);
+      }
+
+      const deposits = (ledgerEntries || [])
+        .filter((e) => e.type === 'DEPOSIT')
+        .reduce((sum, e) => sum + Number(e.amount), 0);
+
+      const withdrawals = (ledgerEntries || [])
+        .filter((e) => e.type === 'WITHDRAWAL')
+        .reduce((sum, e) => sum + Number(e.amount), 0);
+
+      const capitalInicial = deposits - withdrawals;
+      setInitialCapital(capitalInicial);
 
       const weeksData = await getWeeksWithResults();
       setWeeks(weeksData);
 
-      if (weeksData.length > 0) {
-        const lastWeek = weeksData[weeksData.length - 1];
+      const completedWeeks = weeksData.filter((w) => w.result);
+
+      if (completedWeeks.length > 0) {
+        const lastWeek = completedWeeks[completedWeeks.length - 1];
+        const lastCapitalEnd = Number(lastWeek.result.user_capital_end);
+        setCurrentCapital(lastCapitalEnd);
         setLastWeekPercentage(lastWeek.percentage);
       }
 
-      const chartPoints: ChartDataPoint[] = weeksData
-        .filter((w) => w.result)
-        .map((w) => ({
-          name: `W${w.week_number}`,
-          valor: Number(w.result.user_capital_end),
-        }));
-      setChartData(chartPoints);
+      if (completedWeeks.length >= 2) {
+        const lastWeek = completedWeeks[completedWeeks.length - 1];
+        const prevWeek = completedWeeks[completedWeeks.length - 2];
+
+        const lastCapital = Number(lastWeek.result.user_capital_end);
+        const prevCapital = Number(prevWeek.result.user_capital_end);
+
+        if (prevCapital > 0) {
+          const change = ((lastCapital - prevCapital) / prevCapital) * 100;
+          setWeekPercentageChange(change);
+        }
+      } else if (completedWeeks.length === 1) {
+        setWeekPercentageChange(completedWeeks[0].percentage);
+      }
     } catch (err) {
       console.error('Error loading user dashboard:', err);
     } finally {
@@ -119,27 +145,23 @@ export default function UserDashboard() {
             title="Capital Actual"
             value={formatCurrency(currentCapital)}
             icon={DollarSign}
-            trend={{ value: lastWeekPercentage, isPositive: lastWeekPercentage >= 0 }}
+            trend={{ value: weekPercentageChange, isPositive: weekPercentageChange >= 0 }}
           />
 
           <CardMetric
             title="Ganancia Acumulada"
             value={formatCurrency(totalProfit)}
             icon={TrendingUp}
-            subtitle={`+${profitPercentage}% ROI`}
+            subtitle={`${profitPercentage >= 0 ? '+' : ''}${profitPercentage}% ROI`}
           />
 
           <CardMetric
             title="% Última Semana"
-            value={`${lastWeekPercentage}%`}
+            value={`${lastWeekPercentage >= 0 ? '+' : ''}${lastWeekPercentage.toFixed(2)}%`}
             icon={Calendar}
             subtitle="Retorno reciente"
           />
         </div>
-
-        {chartData.length > 0 && (
-          <ChartPanel data={chartData} title="Crecimiento de Capital" />
-        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="card-fintage rounded-lg p-6">
