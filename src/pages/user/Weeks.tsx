@@ -10,7 +10,9 @@ interface UserWeek {
   endDate: string;
   percentage: number;
   userCapitalStart: number;
+  userCapitalEnd: number;
   userPnL: number;
+  feeGenerated: number;
 }
 
 export default function UserWeeks() {
@@ -41,7 +43,9 @@ export default function UserWeeks() {
           endDate: w.end_date,
           percentage: w.percentage,
           userCapitalStart: Number(w.result.user_capital_start),
+          userCapitalEnd: Number(w.result.user_capital_end),
           userPnL: Number(w.result.user_pnl),
+          feeGenerated: Number(w.result.fee_generated),
         }));
 
       setWeeks(userWeeks);
@@ -81,23 +85,35 @@ export default function UserWeeks() {
         </div>
 
         <div className="card-fintage rounded-lg p-6">
+          <h3 className="text-lg font-semibold text-white mb-2">
+            Desglose de Ganancias por Semana
+          </h3>
+          <p className="text-sm text-gray-400 mb-4">
+            Ganancia por tu depósito + Ganancia por tu trabajo (performance fee)
+          </p>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-gray-800">
-                  <th className="px-4 py-3 text-sm font-semibold text-gray-400 text-left">
+                  <th className="px-3 py-3 text-xs font-semibold text-gray-400 text-left">
                     Semana
                   </th>
-                  <th className="px-4 py-3 text-sm font-semibold text-gray-400 text-center">
+                  <th className="px-3 py-3 text-xs font-semibold text-gray-400 text-center">
                     Fechas
                   </th>
-                  <th className="px-4 py-3 text-sm font-semibold text-gray-400 text-right">
-                    Capital
+                  <th className="px-3 py-3 text-xs font-semibold text-gray-400 text-right">
+                    Capital Inicial
                   </th>
-                  <th className="px-4 py-3 text-sm font-semibold text-gray-400 text-right">
-                    Ganancia
+                  <th className="px-3 py-3 text-xs font-semibold text-green-400 text-right">
+                    Ganancia Depósito
                   </th>
-                  <th className="px-4 py-3 text-sm font-semibold text-gray-400 text-center">
+                  <th className="px-3 py-3 text-xs font-semibold text-fintage-gold text-right">
+                    Ganancia Trabajo
+                  </th>
+                  <th className="px-3 py-3 text-xs font-semibold text-emerald-400 text-right">
+                    Total Semana
+                  </th>
+                  <th className="px-3 py-3 text-xs font-semibold text-gray-400 text-center">
                     %
                   </th>
                 </tr>
@@ -106,51 +122,78 @@ export default function UserWeeks() {
                 {weeks.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={5}
-                      className="px-4 py-6 text-center text-gray-400"
+                      colSpan={7}
+                      className="px-3 py-6 text-center text-gray-400"
                     >
                       No hay semanas registradas
                     </td>
                   </tr>
                 ) : (
-                  weeks.map((week, idx) => (
-                    <tr
-                      key={idx}
-                      className="border-b border-gray-800 hover:bg-gray-800 hover:bg-opacity-30"
-                    >
-                      <td className="px-4 py-3 text-sm font-medium text-gray-200">
-                        Semana {week.weekNumber}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-400 text-center">
-                        {formatDate(week.startDate)} a {formatDate(week.endDate)}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-200 text-right">
-                        {formatCurrency(week.userCapitalStart)}
-                      </td>
-                      <td className="px-4 py-3 text-sm font-medium text-right">
-                        <span
-                          className={
-                            week.userPnL >= 0
-                              ? 'text-green-400'
-                              : 'text-red-400'
-                          }
-                        >
-                          {week.userPnL >= 0 ? '+' : ''}
-                          {formatCurrency(week.userPnL)}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-sm text-center">
-                        <BadgePnL
-                          value={week.percentage}
-                          showIcon={false}
-                          size="sm"
-                        />
-                      </td>
-                    </tr>
-                  ))
+                  weeks.map((week, idx) => {
+                    const totalWeek = week.userPnL + week.feeGenerated;
+
+                    return (
+                      <tr
+                        key={idx}
+                        className="border-b border-gray-800 hover:bg-gray-800 hover:bg-opacity-30"
+                      >
+                        <td className="px-3 py-3 text-sm font-medium text-gray-200">
+                          W{week.weekNumber}
+                        </td>
+                        <td className="px-3 py-3 text-xs text-gray-400 text-center">
+                          {formatDate(week.startDate)} a {formatDate(week.endDate)}
+                        </td>
+                        <td className="px-3 py-3 text-sm text-gray-200 text-right">
+                          {formatCurrency(week.userCapitalStart)}
+                        </td>
+                        <td className="px-3 py-3 text-sm font-medium text-right">
+                          <span
+                            className={
+                              week.userPnL >= 0
+                                ? 'text-green-400'
+                                : 'text-red-400'
+                            }
+                          >
+                            {week.userPnL >= 0 ? '+' : ''}
+                            {formatCurrency(week.userPnL)}
+                          </span>
+                        </td>
+                        <td className="px-3 py-3 text-sm font-medium text-fintage-gold text-right">
+                          {week.feeGenerated >= 0 ? '+' : ''}
+                          {formatCurrency(week.feeGenerated)}
+                        </td>
+                        <td className="px-3 py-3 text-sm font-bold text-emerald-400 text-right">
+                          {totalWeek >= 0 ? '+' : ''}
+                          {formatCurrency(totalWeek)}
+                        </td>
+                        <td className="px-3 py-3 text-sm text-center">
+                          <BadgePnL
+                            value={week.percentage}
+                            showIcon={false}
+                            size="sm"
+                          />
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>
+          </div>
+
+          <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-gray-800">
+            <div className="text-center">
+              <p className="text-xs text-green-400 mb-1">Ganancia Depósito</p>
+              <p className="text-sm text-gray-300">Rendimiento de tu capital invertido</p>
+            </div>
+            <div className="text-center">
+              <p className="text-xs text-fintage-gold mb-1">Ganancia Trabajo</p>
+              <p className="text-sm text-gray-300">Performance fee (30% exceso sobre HWM)</p>
+            </div>
+            <div className="text-center">
+              <p className="text-xs text-emerald-400 mb-1">Total Semana</p>
+              <p className="text-sm text-gray-300">Suma de ambas ganancias</p>
+            </div>
           </div>
         </div>
       </div>

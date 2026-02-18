@@ -212,88 +212,120 @@ export default function AdminDashboard() {
 
         <div className="card-fintage rounded-lg p-6">
           <h3 className="text-lg font-semibold text-white mb-4">
-            Resumen Semanal
+            Resumen Semanal Detallado
           </h3>
+          <p className="text-sm text-gray-400 mb-4">
+            Métricas reales de weekly_results: PnL Admin, Fee pagado al Usuario, Capital Final neto (descontado fee), y HWM actualizado
+          </p>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
                 <tr className="border-b border-gray-800">
-                  <th className="px-4 py-3 text-sm font-semibold text-gray-400 text-left">
+                  <th className="px-3 py-3 text-xs font-semibold text-gray-400 text-left">
                     Semana
                   </th>
-                  <th className="px-4 py-3 text-sm font-semibold text-gray-400 text-center">
+                  <th className="px-3 py-3 text-xs font-semibold text-gray-400 text-center">
                     %
                   </th>
-                  <th className="px-4 py-3 text-sm font-semibold text-gray-400 text-right">
+                  <th className="px-3 py-3 text-xs font-semibold text-gray-400 text-right">
                     PnL Admin
                   </th>
-                  <th className="px-4 py-3 text-sm font-semibold text-gray-400 text-right">
+                  <th className="px-3 py-3 text-xs font-semibold text-fintage-gold text-right">
+                    Fee Pagado
+                  </th>
+                  <th className="px-3 py-3 text-xs font-semibold text-blue-400 text-right">
+                    Cap Final Admin
+                    <div className="text-gray-500 font-normal">(neto)</div>
+                  </th>
+                  <th className="px-3 py-3 text-xs font-semibold text-gray-400 text-right">
                     PnL User
                   </th>
-                  <th className="px-4 py-3 text-sm font-semibold text-fintage-gold text-right">
-                    Fee
-                  </th>
-                  <th className="px-4 py-3 text-sm font-semibold text-gray-400 text-right">
-                    Cap Final Admin
-                  </th>
-                  <th className="px-4 py-3 text-sm font-semibold text-gray-400 text-right">
+                  <th className="px-3 py-3 text-xs font-semibold text-emerald-400 text-right">
                     Cap Final User
+                  </th>
+                  <th className="px-3 py-3 text-xs font-semibold text-fintage-gold text-right">
+                    HWM After
                   </th>
                 </tr>
               </thead>
               <tbody>
                 {weeksWithResults.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-4 py-6 text-center text-gray-400">
+                    <td colSpan={8} className="px-3 py-6 text-center text-gray-400">
                       No hay semanas registradas
                     </td>
                   </tr>
                 ) : (
-                  weeksWithResults.map((week) => (
-                    <tr
-                      key={week.id}
-                      className="border-b border-gray-800 hover:bg-gray-800 hover:bg-opacity-30"
-                    >
-                      <td className="px-4 py-3 text-sm text-gray-200">
-                        Semana {week.week_number}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-center">
-                        <BadgePnL
-                          value={week.percentage}
-                          showIcon={false}
-                          size="sm"
-                        />
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-200 text-right">
-                        {week.result
-                          ? formatCurrency(Number(week.result.admin_pnl))
-                          : '-'}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-200 text-right">
-                        {week.result
-                          ? formatCurrency(Number(week.result.user_pnl))
-                          : '-'}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-fintage-gold font-medium text-right">
-                        {week.result
-                          ? formatCurrency(Number(week.result.fee_generated))
-                          : '-'}
-                      </td>
-                      <td className="px-4 py-3 text-sm font-medium text-gray-200 text-right">
-                        {week.result
-                          ? formatCurrency(Number(week.result.admin_capital_end))
-                          : '-'}
-                      </td>
-                      <td className="px-4 py-3 text-sm font-medium text-gray-200 text-right">
-                        {week.result
-                          ? formatCurrency(Number(week.result.user_capital_end))
-                          : '-'}
-                      </td>
-                    </tr>
-                  ))
+                  weeksWithResults.map((week) => {
+                    const adminPnl = week.result ? Number(week.result.admin_pnl) : 0;
+                    const feeGenerated = week.result ? Number(week.result.fee_generated) : 0;
+                    const adminCapitalEnd = week.result ? Number(week.result.admin_capital_end) : 0;
+                    const userPnl = week.result ? Number(week.result.user_pnl) : 0;
+                    const userCapitalEnd = week.result ? Number(week.result.user_capital_end) : 0;
+                    const hwmAfter = week.result ? Number(week.result.hwm_after) : 0;
+
+                    return (
+                      <tr
+                        key={week.id}
+                        className="border-b border-gray-800 hover:bg-gray-800 hover:bg-opacity-30"
+                      >
+                        <td className="px-3 py-3 text-sm text-gray-200">
+                          Semana {week.week_number}
+                        </td>
+                        <td className="px-3 py-3 text-sm text-center">
+                          <BadgePnL
+                            value={week.percentage}
+                            showIcon={false}
+                            size="sm"
+                          />
+                        </td>
+                        <td className="px-3 py-3 text-sm text-right">
+                          <span className={adminPnl >= 0 ? 'text-green-400' : 'text-red-400'}>
+                            {week.result ? formatCurrency(adminPnl) : '-'}
+                          </span>
+                        </td>
+                        <td className="px-3 py-3 text-sm text-fintage-gold font-medium text-right">
+                          {week.result ? formatCurrency(feeGenerated) : '-'}
+                        </td>
+                        <td className="px-3 py-3 text-sm font-semibold text-blue-400 text-right">
+                          {week.result ? formatCurrency(adminCapitalEnd) : '-'}
+                        </td>
+                        <td className="px-3 py-3 text-sm text-right">
+                          <span className={userPnl >= 0 ? 'text-green-400' : 'text-red-400'}>
+                            {week.result ? formatCurrency(userPnl) : '-'}
+                          </span>
+                        </td>
+                        <td className="px-3 py-3 text-sm font-semibold text-emerald-400 text-right">
+                          {week.result ? formatCurrency(userCapitalEnd) : '-'}
+                        </td>
+                        <td className="px-3 py-3 text-sm text-fintage-gold font-medium text-right">
+                          {week.result ? formatCurrency(hwmAfter) : '-'}
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>
+          </div>
+
+          <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pt-4 border-t border-gray-800">
+            <div className="text-center">
+              <p className="text-xs text-gray-500 mb-1">PnL Admin</p>
+              <p className="text-sm text-gray-300">Ganancia/Pérdida del Admin</p>
+            </div>
+            <div className="text-center">
+              <p className="text-xs text-fintage-gold mb-1">Fee Pagado</p>
+              <p className="text-sm text-gray-300">30% exceso sobre HWM</p>
+            </div>
+            <div className="text-center">
+              <p className="text-xs text-blue-400 mb-1">Cap Final Admin (neto)</p>
+              <p className="text-sm text-gray-300">Ya descontado fee</p>
+            </div>
+            <div className="text-center">
+              <p className="text-xs text-fintage-gold mb-1">HWM After</p>
+              <p className="text-sm text-gray-300">Nuevo High Water Mark</p>
+            </div>
           </div>
         </div>
       </div>
