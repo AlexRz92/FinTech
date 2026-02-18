@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Wallet, LogIn, Loader2 } from 'lucide-react';
+import { LogIn, Loader2 } from 'lucide-react';
 import { signIn } from '../lib/auth';
 
 export default function Login() {
@@ -39,11 +39,13 @@ export default function Login() {
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <div className="card-fintage rounded-2xl p-8">
-          <div className="flex justify-center mb-8">
-            <div className="w-16 h-16 gradient-fintage-blue rounded-2xl flex items-center justify-center shadow-lg">
-              <Wallet className="w-8 h-8 text-white" />
-            </div>
+        <div className="card-fintage  p-8">
+          <div className="flex justify-center mb-8"> 
+            <img
+              src="/timo.png"
+              alt="Timo Logo"
+              className="w-52 h-52 object-contain"
+            />
           </div>
 
           <h1 className="text-3xl font-bold text-center text-white mb-2">FinTech</h1>
