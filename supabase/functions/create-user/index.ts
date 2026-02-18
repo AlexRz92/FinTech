@@ -5,7 +5,15 @@ interface CreateUserPayload {
   username: string;
   email: string;
   password: string;
-  role: string;
+}
+
+interface ErrorResponse {
+  ok: false;
+  step: string;
+  message: string;
+  details?: string;
+  code?: string;
+  hint?: string;
 }
 
 const corsHeaders = {
@@ -13,6 +21,17 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
 };
+
+function sanitizePayload(payload: Partial<CreateUserPayload>) {
+  const sanitized = { ...payload };
+  delete sanitized.password;
+  return sanitized;
+}
+
+function validateEmail(email: string): boolean {
+  const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return re.test(email);
+}
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
@@ -22,109 +41,248 @@ Deno.serve(async (req: Request) => {
     });
   }
 
-  try {
-    const payload: CreateUserPayload = await req.json();
+  let payload: Partial<CreateUserPayload>;
 
+  try {
+    payload = await req.json();
+
+    // VALIDATION
+    if (!payload.email || !payload.username || !payload.password || !payload.name) {
+      const errorResponse: ErrorResponse = {
+        ok: false,
+        step: "VALIDATION",
+        message: "Campos requeridos: name, email, username, password",
+        details: `Recibido: name=${payload.name ? '✓' : '✗'}, email=${payload.email ? '✓' : '✗'}, username=${payload.username ? '✓' : '✗'}, password=${payload.password ? '✓' : '✗'}`,
+      };
+
+      console.error("[VALIDATION]", {
+        payload: sanitizePayload(payload),
+        error: errorResponse.message,
+      });
+
+      return new Response(JSON.stringify(errorResponse), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (!validateEmail(payload.email)) {
+      const errorResponse: ErrorResponse = {
+        ok: false,
+        step: "VALIDATION",
+        message: "Email inválido",
+        details: `Email: ${payload.email}`,
+      };
+
+      console.error("[VALIDATION]", {
+        payload: sanitizePayload(payload),
+        error: errorResponse.message,
+      });
+
+      return new Response(JSON.stringify(errorResponse), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (payload.password.length < 8) {
+      const errorResponse: ErrorResponse = {
+        ok: false,
+        step: "VALIDATION",
+        message: "Contraseña debe tener mínimo 8 caracteres",
+        details: `Largo actual: ${payload.password.length}`,
+      };
+
+      console.error("[VALIDATION]", {
+        payload: sanitizePayload(payload),
+        error: errorResponse.message,
+      });
+
+      return new Response(JSON.stringify(errorResponse), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // AUTH_CHECK
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
-      return new Response(
-        JSON.stringify({ error: "Missing authorization header" }),
-        {
-          status: 401,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
+      const errorResponse: ErrorResponse = {
+        ok: false,
+        step: "AUTH_CHECK",
+        message: "Token de autorización faltante o inválido",
+        details: "El header Authorization debe incluir un Bearer token válido",
+      };
+
+      console.error("[AUTH_CHECK]", errorResponse.message);
+
+      return new Response(JSON.stringify(errorResponse), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const accessToken = authHeader.substring(7);
-
     const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") || "";
     const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
 
+    // Verificar que el usuario actual es ADMIN
+    const adminClient = createClient(supabaseUrl, supabaseServiceRoleKey);
     const authClient = createClient(supabaseUrl, supabaseAnonKey, {
       global: {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
+        headers: { Authorization: `Bearer ${accessToken}` },
       },
     });
 
     const { data: { user: currentUser }, error: authError } = await authClient.auth.getUser();
 
     if (authError || !currentUser) {
-      return new Response(
-        JSON.stringify({ error: "Unauthorized" }),
-        {
-          status: 401,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
+      const errorResponse: ErrorResponse = {
+        ok: false,
+        step: "USER_VERIFICATION",
+        message: authError?.message || "Usuario no autenticado",
+      };
+
+      console.error("[USER_VERIFICATION]", errorResponse.message);
+
+      return new Response(JSON.stringify(errorResponse), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
-    const adminClient = createClient(supabaseUrl, supabaseServiceRoleKey);
-
-    const { data: currentProfile, error: profileError } = await adminClient
+    // Check admin role
+    const { data: currentProfile, error: profileCheckError } = await adminClient
       .from("profiles")
       .select("role")
       .eq("id", currentUser.id)
       .maybeSingle();
 
-    if (profileError || !currentProfile || currentProfile.role !== "ADMIN") {
-      return new Response(
-        JSON.stringify({ error: "Only admins can create users" }),
-        {
-          status: 403,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
+    if (profileCheckError) {
+      const errorResponse: ErrorResponse = {
+        ok: false,
+        step: "ADMIN_CHECK",
+        message: profileCheckError.message || "Error verificando permisos",
+        details: profileCheckError.hint,
+        code: profileCheckError.code,
+      };
+
+      console.error("[ADMIN_CHECK]", errorResponse);
+
+      return new Response(JSON.stringify(errorResponse), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
+    if (!currentProfile || currentProfile.role !== "ADMIN") {
+      const errorResponse: ErrorResponse = {
+        ok: false,
+        step: "ADMIN_CHECK",
+        message: "Solo administradores pueden crear usuarios",
+        details: `Rol actual: ${currentProfile?.role || 'sin perfil'}`,
+      };
+
+      console.error("[ADMIN_CHECK]", errorResponse.message);
+
+      return new Response(JSON.stringify(errorResponse), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Check if username already exists
+    const { data: existingUsername, error: usernameCheckError } = await adminClient
+      .from("profiles")
+      .select("id")
+      .eq("username", payload.username)
+      .maybeSingle();
+
+    if (usernameCheckError) {
+      const errorResponse: ErrorResponse = {
+        ok: false,
+        step: "USERNAME_CHECK",
+        message: usernameCheckError.message || "Error verificando username",
+        code: usernameCheckError.code,
+      };
+
+      console.error("[USERNAME_CHECK]", errorResponse);
+
+      return new Response(JSON.stringify(errorResponse), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (existingUsername) {
+      const errorResponse: ErrorResponse = {
+        ok: false,
+        step: "VALIDATION",
+        message: "Este username ya existe",
+        details: `Username: ${payload.username}`,
+      };
+
+      console.error("[VALIDATION]", errorResponse.message);
+
+      return new Response(JSON.stringify(errorResponse), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // STEP 1: AUTH_CREATE (PRUEBA AISLADA - SOLO ESTO)
+    console.log("[AUTH_CREATE] Intentando crear usuario Auth...");
     const { data: newAuthUser, error: createAuthError } = await adminClient.auth.admin.createUser({
-      email: payload.email,
-      password: payload.password,
+      email: payload.email as string,
+      password: payload.password as string,
       email_confirm: true,
     });
 
-    if (createAuthError || !newAuthUser?.user) {
-      return new Response(
-        JSON.stringify({ error: createAuthError?.message || "Failed to create auth user" }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
+    if (createAuthError) {
+      const errorResponse: ErrorResponse = {
+        ok: false,
+        step: "AUTH_CREATE",
+        message: createAuthError.message || "Error al crear usuario en Auth",
+        details: createAuthError.code,
+        code: createAuthError.code,
+      };
+
+      console.error("[AUTH_CREATE] FALLO", {
+        payload: sanitizePayload(payload),
+        error: errorResponse,
+      });
+
+      return new Response(JSON.stringify(errorResponse), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
-    const { error: insertProfileError } = await adminClient
-      .from("profiles")
-      .insert([
-        {
-          id: newAuthUser.user.id,
-          name: payload.name,
-          username: payload.username,
-          email: payload.email,
-          role: payload.role || "USER",
-          capital_net: 0,
-        },
-      ]);
+    if (!newAuthUser?.user?.id) {
+      const errorResponse: ErrorResponse = {
+        ok: false,
+        step: "AUTH_CREATE",
+        message: "Usuario de Auth creado sin ID",
+      };
 
-    if (insertProfileError) {
-      await adminClient.auth.admin.deleteUser(newAuthUser.user.id);
-      return new Response(
-        JSON.stringify({ error: "Failed to create profile" }),
-        {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
+      console.error("[AUTH_CREATE] FALLO - Sin ID", errorResponse);
+
+      return new Response(JSON.stringify(errorResponse), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
+    console.log(`[AUTH_CREATE] ✓ EXITO - Usuario Auth creado: ${newAuthUser.user.id}`);
+
+    // RETORNAR AQUI - NO INSERTAR EN PROFILES TODAVIA (PRUEBA 1)
     return new Response(
       JSON.stringify({
         ok: true,
+        step: "AUTH_CREATE_OK",
         userId: newAuthUser.user.id,
-        message: "User created successfully",
+        message: "Usuario Auth creado exitosamente. Prueba 1 completa.",
       }),
       {
         status: 201,
@@ -132,13 +290,21 @@ Deno.serve(async (req: Request) => {
       }
     );
   } catch (error) {
-    console.error("Error:", error);
-    return new Response(
-      JSON.stringify({ error: "Internal server error" }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
-    );
+    const errorResponse: ErrorResponse = {
+      ok: false,
+      step: "UNKNOWN",
+      message: error instanceof Error ? error.message : "Error interno del servidor",
+      details: error instanceof Error ? error.stack : String(error),
+    };
+
+    console.error("[UNKNOWN]", {
+      payload: sanitizePayload(payload as Partial<CreateUserPayload>),
+      error: errorResponse,
+    });
+
+    return new Response(JSON.stringify(errorResponse), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 });

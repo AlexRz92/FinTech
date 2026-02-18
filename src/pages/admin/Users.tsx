@@ -109,6 +109,14 @@ export default function AdminUsers() {
       }
 
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      console.log('[handleCreateUser] Token:', session.access_token ? 'presente' : 'FALTANTE');
+      console.log('[handleCreateUser] Enviando payload:', {
+        name: newUserEmail.split('@')[0],
+        username: newUserEmail.split('@')[0],
+        email: newUserEmail,
+        password: '***',
+      });
+
       const response = await fetch(`${supabaseUrl}/functions/v1/create-user`, {
         method: 'POST',
         headers: {
@@ -120,14 +128,39 @@ export default function AdminUsers() {
           username: newUserEmail.split('@')[0],
           email: newUserEmail,
           password: newUserPassword,
-          role: 'USER',
         }),
       });
 
       const result = await response.json();
 
       if (!response.ok) {
-        setError(result.error || 'Error al crear usuario');
+        let errorMessage = `[HTTP ${response.status}] `;
+
+        if (result.step) {
+          errorMessage += `[${result.step}] `;
+        }
+
+        if (result.message) {
+          errorMessage += result.message;
+        } else if (result.error) {
+          errorMessage += result.error;
+        } else {
+          errorMessage += 'Error desconocido';
+        }
+
+        if (result.details) {
+          errorMessage += `\n\nDetalles: ${result.details}`;
+        }
+
+        if (result.code) {
+          errorMessage += `\n\nCódigo: ${result.code}`;
+        }
+
+        if (result.hint) {
+          errorMessage += `\n\nSugerencia: ${result.hint}`;
+        }
+
+        setError(errorMessage);
         return;
       }
 
@@ -139,7 +172,10 @@ export default function AdminUsers() {
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
       console.error('Error creating user:', err);
-      setError('Error al crear usuario');
+      const errorMessage = err instanceof Error
+        ? `Error de red o excepción: ${err.message}`
+        : 'Error desconocido al crear usuario';
+      setError(errorMessage);
     } finally {
       setSubmitting(false);
     }
@@ -296,7 +332,9 @@ export default function AdminUsers() {
             </div>
             {error && (
               <div className="p-3 bg-red-900 bg-opacity-20 border border-red-500 border-opacity-30 rounded text-red-400 text-sm">
-                {error}
+                <pre className="whitespace-pre-wrap font-sans text-xs leading-relaxed">
+                  {error}
+                </pre>
               </div>
             )}
             <div className="flex gap-3 pt-4">
