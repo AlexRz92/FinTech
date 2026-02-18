@@ -204,6 +204,9 @@ export default function AdminCapital() {
     );
   }
 
+  const adminEntries = entries.filter((e) => e.user_id === adminUser?.id);
+  const userEntries = entries.filter((e) => e.user_id !== adminUser?.id);
+
   return (
     <Layout userRole="admin" userName="Admin">
       <div className="space-y-6">
@@ -228,123 +231,248 @@ export default function AdminCapital() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {[
-            'admin_deposit' as CapitalAction,
-            'user_deposit' as CapitalAction,
-            'admin_withdrawal' as CapitalAction,
-            'user_withdrawal' as CapitalAction,
-          ].map((action) => {
-            const isUserAction = action?.includes('user');
-            const isDisabled = isUserAction && userList.length === 0;
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-4">
+            <h2 className="text-xl font-semibold text-white">Capital Admin</h2>
 
-            return (
+            <div className="card-fintage rounded-lg p-4 bg-blue-900 bg-opacity-10 border-blue-500 border-opacity-20">
+              <p className="text-sm text-gray-400">Aplicado a:</p>
+              <p className="text-base font-medium text-white mt-1">
+                Admin ({adminUser?.email || adminUser?.username || 'Administrador'})
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 gap-3">
               <button
-                key={action}
-                onClick={() => setActiveAction(action)}
-                disabled={isDisabled}
-                className={`card-fintage p-6 rounded-lg transition-colors text-left ${
-                  isDisabled
-                    ? 'opacity-50 cursor-not-allowed'
-                    : 'hover:border-blue-500 hover:border-opacity-50'
-                }`}
+                onClick={() => setActiveAction('admin_deposit')}
+                className="card-fintage p-5 rounded-lg transition-colors text-left hover:border-blue-500 hover:border-opacity-50"
               >
                 <div className="flex items-start justify-between">
                   <div>
-                    <div className="text-lg font-semibold text-white">
-                      {getActionLabel(action)}
+                    <div className="text-base font-semibold text-white">
+                      Agregar capital admin
                     </div>
                     <p className="text-sm text-gray-400 mt-1">
-                      {isUserAction && userList.length > 0 ? (
-                        <>
-                          {getActionDescription(action)}
-                          <br />
-                          <span className="text-blue-400 mt-1 inline-block">
-                            Usuario: {selectedUserId && userList.find(u => u.id === selectedUserId)?.name || userList[0]?.name}
-                          </span>
-                        </>
-                      ) : (
-                        getActionDescription(action)
-                      )}
-                      {isUserAction && userList.length === 0 && (
-                        <span className="text-red-400 block mt-1">Sin usuarios disponibles</span>
-                      )}
+                      Depositar fondos del administrador
                     </p>
                   </div>
                   <Plus className="w-5 h-5 text-gray-400" />
                 </div>
               </button>
-            );
-          })}
+
+              <button
+                onClick={() => setActiveAction('admin_withdrawal')}
+                className="card-fintage p-5 rounded-lg transition-colors text-left hover:border-blue-500 hover:border-opacity-50"
+              >
+                <div className="flex items-start justify-between">
+                  <div>
+                    <div className="text-base font-semibold text-white">
+                      Registrar retiro admin
+                    </div>
+                    <p className="text-sm text-gray-400 mt-1">
+                      Retirar fondos del administrador
+                    </p>
+                  </div>
+                  <Plus className="w-5 h-5 text-gray-400" />
+                </div>
+              </button>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <h2 className="text-xl font-semibold text-white">Capital Operador</h2>
+
+            {userList.length === 0 ? (
+              <div className="card-fintage rounded-lg p-6 text-center">
+                <AlertCircle className="w-12 h-12 text-gray-500 mx-auto mb-3" />
+                <p className="text-gray-300 font-medium mb-2">
+                  Aún no hay operador registrado
+                </p>
+                <p className="text-sm text-gray-400">
+                  Crea un usuario USER en /admin/usuarios para comenzar
+                </p>
+              </div>
+            ) : (
+              <>
+                <div className="card-fintage rounded-lg p-4 bg-green-900 bg-opacity-10 border-green-500 border-opacity-20">
+                  <p className="text-sm text-gray-400">Aplicado a:</p>
+                  {userList.length === 1 ? (
+                    <p className="text-base font-medium text-white mt-1">
+                      {userList[0].name || userList[0].username || 'Operador'} ({userList[0].email})
+                    </p>
+                  ) : (
+                    <div className="mt-2">
+                      <label className="block text-xs text-gray-400 mb-1">Operador</label>
+                      <select
+                        value={selectedUserId}
+                        onChange={(e) => setSelectedUserId(e.target.value)}
+                        className="input-fintage w-full px-3 py-2 rounded-lg text-sm"
+                      >
+                        {userList.map((user) => (
+                          <option key={user.id} value={user.id}>
+                            {user.name || user.username || user.email}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 gap-3">
+                  <button
+                    onClick={() => setActiveAction('user_deposit')}
+                    className="card-fintage p-5 rounded-lg transition-colors text-left hover:border-blue-500 hover:border-opacity-50"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <div className="text-base font-semibold text-white">
+                          Agregar capital operador
+                        </div>
+                        <p className="text-sm text-gray-400 mt-1">
+                          Procesar inversión de operador
+                        </p>
+                      </div>
+                      <Plus className="w-5 h-5 text-gray-400" />
+                    </div>
+                  </button>
+
+                  <button
+                    onClick={() => setActiveAction('user_withdrawal')}
+                    className="card-fintage p-5 rounded-lg transition-colors text-left hover:border-blue-500 hover:border-opacity-50"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <div className="text-base font-semibold text-white">
+                          Registrar retiro operador
+                        </div>
+                        <p className="text-sm text-gray-400 mt-1">
+                          Procesar retiro de operador
+                        </p>
+                      </div>
+                      <Plus className="w-5 h-5 text-gray-400" />
+                    </div>
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         </div>
 
-        <div className="card-fintage rounded-lg p-6">
-          <h3 className="text-lg font-semibold text-white mb-4">
-            Historial de Movimientos
-          </h3>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-gray-800">
-                  <th className="px-4 py-3 text-sm font-semibold text-gray-400 text-left">
-                    Usuario
-                  </th>
-                  <th className="px-4 py-3 text-sm font-semibold text-gray-400 text-left">
-                    Tipo
-                  </th>
-                  <th className="px-4 py-3 text-sm font-semibold text-gray-400 text-right">
-                    Monto
-                  </th>
-                  <th className="px-4 py-3 text-sm font-semibold text-gray-400 text-left">
-                    Fecha
-                  </th>
-                  <th className="px-4 py-3 text-sm font-semibold text-gray-400 text-left">
-                    Nota
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {entries.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="px-4 py-6 text-center text-gray-400">
-                      No hay movimientos registrados
-                    </td>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="card-fintage rounded-lg p-6">
+            <h3 className="text-lg font-semibold text-white mb-4">
+              Movimientos Admin
+            </h3>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-gray-800">
+                    <th className="px-4 py-3 text-sm font-semibold text-gray-400 text-left">
+                      Tipo
+                    </th>
+                    <th className="px-4 py-3 text-sm font-semibold text-gray-400 text-right">
+                      Monto
+                    </th>
+                    <th className="px-4 py-3 text-sm font-semibold text-gray-400 text-left">
+                      Fecha
+                    </th>
                   </tr>
-                ) : (
-                  entries.map((entry) => (
-                    <tr
-                      key={entry.id}
-                      className="border-b border-gray-800 hover:bg-gray-800 hover:bg-opacity-30"
-                    >
-                      <td className="px-4 py-3 text-sm text-gray-300">
-                        {getUserName(entry.user_id)}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-200 capitalize">
-                        {entry.type === 'DEPOSIT' ? 'Depósito' : 'Retiro'}
-                      </td>
-                      <td className="px-4 py-3 text-sm font-medium text-right">
-                        <span
-                          className={
-                            entry.type === 'DEPOSIT'
-                              ? 'text-green-400'
-                              : 'text-red-400'
-                          }
-                        >
-                          {entry.type === 'DEPOSIT' ? '+' : '-'}
-                          {formatCurrency(entry.amount)}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-400">
-                        {formatDate(entry.created_at)}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-300">
-                        {entry.note || '-'}
+                </thead>
+                <tbody>
+                  {adminEntries.length === 0 ? (
+                    <tr>
+                      <td colSpan={3} className="px-4 py-6 text-center text-gray-400 text-sm">
+                        No hay movimientos
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                  ) : (
+                    adminEntries.slice(0, 5).map((entry) => (
+                      <tr
+                        key={entry.id}
+                        className="border-b border-gray-800 hover:bg-gray-800 hover:bg-opacity-30"
+                      >
+                        <td className="px-4 py-3 text-sm text-gray-200">
+                          {entry.type === 'DEPOSIT' ? 'Depósito' : 'Retiro'}
+                        </td>
+                        <td className="px-4 py-3 text-sm font-medium text-right">
+                          <span
+                            className={
+                              entry.type === 'DEPOSIT'
+                                ? 'text-green-400'
+                                : 'text-red-400'
+                            }
+                          >
+                            {entry.type === 'DEPOSIT' ? '+' : '-'}
+                            {formatCurrency(entry.amount)}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-400">
+                          {formatDate(entry.created_at)}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div className="card-fintage rounded-lg p-6">
+            <h3 className="text-lg font-semibold text-white mb-4">
+              Movimientos Operador
+            </h3>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-gray-800">
+                    <th className="px-4 py-3 text-sm font-semibold text-gray-400 text-left">
+                      Tipo
+                    </th>
+                    <th className="px-4 py-3 text-sm font-semibold text-gray-400 text-right">
+                      Monto
+                    </th>
+                    <th className="px-4 py-3 text-sm font-semibold text-gray-400 text-left">
+                      Fecha
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {userEntries.length === 0 ? (
+                    <tr>
+                      <td colSpan={3} className="px-4 py-6 text-center text-gray-400 text-sm">
+                        No hay movimientos
+                      </td>
+                    </tr>
+                  ) : (
+                    userEntries.slice(0, 5).map((entry) => (
+                      <tr
+                        key={entry.id}
+                        className="border-b border-gray-800 hover:bg-gray-800 hover:bg-opacity-30"
+                      >
+                        <td className="px-4 py-3 text-sm text-gray-200">
+                          {entry.type === 'DEPOSIT' ? 'Depósito' : 'Retiro'}
+                        </td>
+                        <td className="px-4 py-3 text-sm font-medium text-right">
+                          <span
+                            className={
+                              entry.type === 'DEPOSIT'
+                                ? 'text-green-400'
+                                : 'text-red-400'
+                            }
+                          >
+                            {entry.type === 'DEPOSIT' ? '+' : '-'}
+                            {formatCurrency(entry.amount)}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-400">
+                          {formatDate(entry.created_at)}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
 
@@ -359,11 +487,19 @@ export default function AdminCapital() {
           title={getActionLabel(activeAction)}
         >
           <div className="space-y-4">
+            {activeAction?.includes('admin') && (
+              <div className="p-4 bg-blue-900 bg-opacity-20 border border-blue-500 border-opacity-30 rounded-lg">
+                <p className="text-sm text-gray-300 mb-1">Aplicado a:</p>
+                <p className="font-medium text-white">
+                  Admin ({adminUser?.email || adminUser?.username || 'Administrador'})
+                </p>
+              </div>
+            )}
+
             {activeAction?.includes('user') && userList.length > 1 && (
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">
-                  Usuario
-                </label>
+              <div className="p-4 bg-green-900 bg-opacity-20 border border-green-500 border-opacity-30 rounded-lg">
+                <p className="text-sm text-gray-300 mb-2">Aplicado a:</p>
+                <label className="block text-xs text-gray-400 mb-1">Operador</label>
                 <select
                   value={selectedUserId}
                   onChange={(e) => setSelectedUserId(e.target.value)}
@@ -372,7 +508,7 @@ export default function AdminCapital() {
                 >
                   {userList.map((user) => (
                     <option key={user.id} value={user.id}>
-                      {user.name || user.email || user.username}
+                      {user.name || user.username || 'Operador'} ({user.email})
                     </option>
                   ))}
                 </select>
@@ -380,8 +516,11 @@ export default function AdminCapital() {
             )}
 
             {activeAction?.includes('user') && userList.length === 1 && (
-              <div className="p-3 bg-blue-900 bg-opacity-20 border border-blue-500 border-opacity-30 rounded text-blue-400 text-sm">
-                Usuario: {userList[0]?.name || userList[0]?.email}
+              <div className="p-4 bg-green-900 bg-opacity-20 border border-green-500 border-opacity-30 rounded-lg">
+                <p className="text-sm text-gray-300 mb-1">Aplicado a:</p>
+                <p className="font-medium text-white">
+                  {userList[0]?.name || userList[0]?.username || 'Operador'} ({userList[0]?.email})
+                </p>
               </div>
             )}
 
