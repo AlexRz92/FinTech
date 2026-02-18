@@ -31,12 +31,6 @@ export interface CapitalLedger {
   created_at: string;
 }
 
-export interface FinancialState {
-  admin_capital: number;
-  user_capital: number;
-  hwm: number;
-}
-
 export async function getCurrentUser() {
   const { data: { session } } = await supabase.auth.getSession();
   return session?.user;
@@ -173,17 +167,6 @@ export async function addCapitalEntry(entry: {
   if (error) throw error;
 
   await recalculateAll(true);
-  return data;
-}
-
-export async function getFinancialState(): Promise<FinancialState | null> {
-  const { data, error } = await supabase
-    .from('financial_state')
-    .select('admin_capital, user_capital, hwm')
-    .limit(1)
-    .maybeSingle();
-
-  if (error) return null;
   return data;
 }
 

@@ -35,21 +35,6 @@ export default function UserDashboard() {
 
       setUserName(user.email.split('@')[0]);
 
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('capital_net')
-        .eq('id', user.id)
-        .maybeSingle();
-
-      if (profileError || !profile) {
-        console.error('Error loading profile:', profileError);
-        setLoading(false);
-        return;
-      }
-
-      const capitalActual = Number(profile.capital_net || 0);
-      setCurrentCapital(capitalActual);
-
       const { data: ledgerEntries, error: ledgerError } = await supabase
         .from('capital_ledger')
         .select('type, amount')
@@ -81,21 +66,20 @@ export default function UserDashboard() {
         const lastCapitalEnd = Number(lastWeek.result.user_capital_end);
         setCurrentCapital(lastCapitalEnd);
         setLastWeekPercentage(lastWeek.percentage);
-      }
 
-      if (completedWeeks.length >= 2) {
-        const lastWeek = completedWeeks[completedWeeks.length - 1];
-        const prevWeek = completedWeeks[completedWeeks.length - 2];
+        if (completedWeeks.length >= 2) {
+          const prevWeek = completedWeeks[completedWeeks.length - 2];
+          const prevCapital = Number(prevWeek.result.user_capital_end);
 
-        const lastCapital = Number(lastWeek.result.user_capital_end);
-        const prevCapital = Number(prevWeek.result.user_capital_end);
-
-        if (prevCapital > 0) {
-          const change = ((lastCapital - prevCapital) / prevCapital) * 100;
-          setWeekPercentageChange(change);
+          if (prevCapital > 0) {
+            const change = ((lastCapitalEnd - prevCapital) / prevCapital) * 100;
+            setWeekPercentageChange(change);
+          }
+        } else if (completedWeeks.length === 1) {
+          setWeekPercentageChange(completedWeeks[0].percentage);
         }
-      } else if (completedWeeks.length === 1) {
-        setWeekPercentageChange(completedWeeks[0].percentage);
+      } else {
+        setCurrentCapital(capitalInicial);
       }
     } catch (err) {
       console.error('Error loading user dashboard:', err);

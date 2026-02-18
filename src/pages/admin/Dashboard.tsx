@@ -4,18 +4,25 @@ import Layout from '../../components/layout/Layout';
 import CardMetric from '../../components/CardMetric';
 import BadgePnL from '../../components/BadgePnL';
 import HWMChart from '../../components/HWMChart';
+import LineChart from '../../components/LineChart';
 import { DollarSign, Users, TrendingUp, Wallet } from 'lucide-react';
 import {
   getWeeksWithResults,
-  getFinancialState,
   getCapitalForUser,
   getAdminId,
   getUserId,
 } from '../../lib/database';
+import { supabase } from '../../lib/supabaseClient';
 
 interface ChartDataPoint {
   name: string;
   hwm: number;
+}
+
+interface CapitalChartDataPoint {
+  name: string;
+  adminCapital: number;
+  userCapital: number;
 }
 
 export default function AdminDashboard() {
@@ -27,8 +34,10 @@ export default function AdminDashboard() {
   const [accumulatedReturn, setAccumulatedReturn] = useState(0);
   const [adminWeekChange, setAdminWeekChange] = useState(0);
   const [userWeekChange, setUserWeekChange] = useState(0);
-  const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
+  const [hwmChartData, setHwmChartData] = useState<ChartDataPoint[]>([]);
+  const [capitalChartData, setCapitalChartData] = useState<CapitalChartDataPoint[]>([]);
   const [weeksWithResults, setWeeksWithResults] = useState<any[]>([]);
+  const [activeUsersCount, setActiveUsersCount] = useState(0);
 
   useEffect(() => {
     loadDashboardData();
@@ -46,65 +55,77 @@ export default function AdminDashboard() {
         return;
       }
 
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('role', 'USER');
+
+      setActiveUsersCount(profiles?.length || 0);
+
       const weeks = await getWeeksWithResults();
       setWeeksWithResults(weeks);
 
-      const state = await getFinancialState();
-      const adminCap = Number(state?.admin_capital || 0);
-      const userCap = Number(state?.user_capital || 0);
-      const hwm = Number(state?.hwm || 0);
+      const completedWeeks = weeks.filter((w) => w.result);
 
-      setCapitalAdmin(adminCap);
-      setCapitalUser(userCap);
-      setTotalFund(adminCap + userCap);
-      setHwmCurrent(hwm);
+      if (completedWeeks.length > 0) {
+        const lastWeek = completedWeeks[completedWeeks.length - 1];
+        const adminCap = Number(lastWeek.result.admin_capital_end);
+        const userCap = Number(lastWeek.result.user_capital_end);
+        const hwm = Number(lastWeek.result.hwm_after);
 
-      if (weeks.length >= 2) {
-        const lastWeek = weeks[weeks.length - 1]?.result;
-        const prevWeek = weeks[weeks.length - 2]?.result;
+        setCapitalAdmin(adminCap);
+        setCapitalUser(userCap);
+        setTotalFund(adminCap + userCap);
+        setHwmCurrent(hwm);
 
-        if (lastWeek && prevWeek) {
-          const lastAdminCap = Number(lastWeek.admin_capital_end);
-          const prevAdminCap = Number(prevWeek.admin_capital_end);
+        if (completedWeeks.length >= 2) {
+          const prevWeek = completedWeeks[completedWeeks.length - 2];
+          const prevAdminCap = Number(prevWeek.result.admin_capital_end);
+          const prevUserCap = Number(prevWeek.result.user_capital_end);
+
           if (prevAdminCap > 0) {
-            const adminChange =
-              ((lastAdminCap - prevAdminCap) / prevAdminCap) * 100;
+            const adminChange = ((adminCap - prevAdminCap) / prevAdminCap) * 100;
             setAdminWeekChange(adminChange);
           }
 
-          const lastUserCap = Number(lastWeek.user_capital_end);
-          const prevUserCap = Number(prevWeek.user_capital_end);
           if (prevUserCap > 0) {
-            const userChange =
-              ((lastUserCap - prevUserCap) / prevUserCap) * 100;
+            const userChange = ((userCap - prevUserCap) / prevUserCap) * 100;
             setUserWeekChange(userChange);
           }
         }
-      }
 
-      const adminCapital = await getCapitalForUser(adminId);
-      const initialAdminCapital = adminCapital.net;
+        const adminCapital = await getCapitalForUser(adminId);
+        const initialAdminCapital = adminCapital.net;
 
-      if (initialAdminCapital > 0 && adminCap > 0) {
-        const returnPct =
-          ((adminCap - initialAdminCapital) / initialAdminCapital) * 100;
-        setAccumulatedReturn(returnPct);
-      } else if (adminCap > 0 && weeks.length > 0 && weeks[0]?.result) {
-        const firstWeekStart = Number(weeks[0].result.admin_capital_start);
-        if (firstWeekStart > 0) {
-          const returnPct =
-            ((adminCap - firstWeekStart) / firstWeekStart) * 100;
+        if (initialAdminCapital > 0 && adminCap > 0) {
+          const returnPct = ((adminCap - initialAdminCapital) / initialAdminCapital) * 100;
           setAccumulatedReturn(returnPct);
         }
+      } else {
+        const adminCapital = await getCapitalForUser(adminId);
+        const userCapital = await getCapitalForUser(userId);
+
+        const adminCap = adminCapital.net;
+        const userCap = userCapital.net;
+
+        setCapitalAdmin(adminCap);
+        setCapitalUser(userCap);
+        setTotalFund(adminCap + userCap);
+        setHwmCurrent(Math.max(adminCap, userCap));
       }
 
-      const chartPoints: ChartDataPoint[] = weeks
-        .filter((week) => week.result)
-        .map((week) => ({
-          name: `W${week.week_number}`,
-          hwm: Number(week.result.hwm_after),
-        }));
-      setChartData(chartPoints);
+      const hwmPoints: ChartDataPoint[] = completedWeeks.map((week) => ({
+        name: `W${week.week_number}`,
+        hwm: Number(week.result.hwm_after),
+      }));
+      setHwmChartData(hwmPoints);
+
+      const capitalPoints: CapitalChartDataPoint[] = completedWeeks.map((week) => ({
+        name: `W${week.week_number}`,
+        adminCapital: Number(week.result.admin_capital_end),
+        userCapital: Number(week.result.user_capital_end),
+      }));
+      setCapitalChartData(capitalPoints);
     } catch (err) {
       console.error('Error loading dashboard data:', err);
     } finally {
@@ -179,13 +200,15 @@ export default function AdminDashboard() {
 
           <CardMetric
             title="Usuarios Activos"
-            value="2"
+            value={activeUsersCount}
             icon={Users}
             subtitle="Inversores registrados"
           />
         </div>
 
-        <HWMChart data={chartData} title="Evolución del High Water Mark (HWM)" />
+        <LineChart data={capitalChartData} title="Evolución del Capital" />
+
+        <HWMChart data={hwmChartData} title="Evolución del High Water Mark (HWM)" />
 
         <div className="card-fintage rounded-lg p-6">
           <h3 className="text-lg font-semibold text-white mb-4">
