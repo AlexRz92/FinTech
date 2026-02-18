@@ -50,21 +50,29 @@ export default function AdminDashboard() {
       setWeeksWithResults(weeks);
 
       const state = await getFinancialState();
-      const adminCap = state?.admin_capital || 0;
-      const userCap = state?.user_capital || 0;
+      const adminCap = Number(state?.admin_capital || 0);
+      const userCap = Number(state?.user_capital || 0);
+      const hwm = Number(state?.hwm || 0);
 
       setCapitalAdmin(adminCap);
       setCapitalUser(userCap);
       setTotalFund(adminCap + userCap);
-      setHwmCurrent(state?.hwm || 0);
+      setHwmCurrent(hwm);
 
       const adminCapital = await getCapitalForUser(adminId);
       const initialAdminCapital = adminCapital.net;
 
-      if (initialAdminCapital > 0) {
+      if (initialAdminCapital > 0 && adminCap > 0) {
         const returnPct =
           ((adminCap - initialAdminCapital) / initialAdminCapital) * 100;
         setAccumulatedReturn(returnPct);
+      } else if (adminCap > 0 && weeks.length > 0 && weeks[0]?.result) {
+        const firstWeekStart = Number(weeks[0].result.admin_capital_start);
+        if (firstWeekStart > 0) {
+          const returnPct =
+            ((adminCap - firstWeekStart) / firstWeekStart) * 100;
+          setAccumulatedReturn(returnPct);
+        }
       }
 
       const chartPoints: ChartDataPoint[] = [];
