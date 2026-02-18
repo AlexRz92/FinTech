@@ -3,7 +3,7 @@ import { Loader2 } from 'lucide-react';
 import Layout from '../../components/layout/Layout';
 import CardMetric from '../../components/CardMetric';
 import BadgePnL from '../../components/BadgePnL';
-import ChartPanel from '../../components/ChartPanel';
+import HWMChart from '../../components/HWMChart';
 import { DollarSign, Users, TrendingUp, Wallet } from 'lucide-react';
 import {
   getWeeksWithResults,
@@ -14,10 +14,8 @@ import {
 } from '../../lib/database';
 
 interface ChartDataPoint {
-  week: number;
-  admin: number;
-  user: number;
-  total: number;
+  name: string;
+  hwm: number;
 }
 
 export default function AdminDashboard() {
@@ -27,6 +25,8 @@ export default function AdminDashboard() {
   const [totalFund, setTotalFund] = useState(0);
   const [hwmCurrent, setHwmCurrent] = useState(0);
   const [accumulatedReturn, setAccumulatedReturn] = useState(0);
+  const [adminWeekChange, setAdminWeekChange] = useState(0);
+  const [userWeekChange, setUserWeekChange] = useState(0);
   const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
   const [weeksWithResults, setWeeksWithResults] = useState<any[]>([]);
 
@@ -59,6 +59,29 @@ export default function AdminDashboard() {
       setTotalFund(adminCap + userCap);
       setHwmCurrent(hwm);
 
+      if (weeks.length >= 2) {
+        const lastWeek = weeks[weeks.length - 1]?.result;
+        const prevWeek = weeks[weeks.length - 2]?.result;
+
+        if (lastWeek && prevWeek) {
+          const lastAdminCap = Number(lastWeek.admin_capital_end);
+          const prevAdminCap = Number(prevWeek.admin_capital_end);
+          if (prevAdminCap > 0) {
+            const adminChange =
+              ((lastAdminCap - prevAdminCap) / prevAdminCap) * 100;
+            setAdminWeekChange(adminChange);
+          }
+
+          const lastUserCap = Number(lastWeek.user_capital_end);
+          const prevUserCap = Number(prevWeek.user_capital_end);
+          if (prevUserCap > 0) {
+            const userChange =
+              ((lastUserCap - prevUserCap) / prevUserCap) * 100;
+            setUserWeekChange(userChange);
+          }
+        }
+      }
+
       const adminCapital = await getCapitalForUser(adminId);
       const initialAdminCapital = adminCapital.net;
 
@@ -75,19 +98,12 @@ export default function AdminDashboard() {
         }
       }
 
-      const chartPoints: ChartDataPoint[] = [];
-      weeks.forEach((week, idx) => {
-        if (week.result) {
-          chartPoints.push({
-            week: week.week_number,
-            admin: Number(week.result.admin_capital_end),
-            user: Number(week.result.user_capital_end),
-            total:
-              Number(week.result.admin_capital_end) +
-              Number(week.result.user_capital_end),
-          });
-        }
-      });
+      const chartPoints: ChartDataPoint[] = weeks
+        .filter((week) => week.result)
+        .map((week) => ({
+          name: `W${week.week_number}`,
+          hwm: Number(week.result.hwm_after),
+        }));
       setChartData(chartPoints);
     } catch (err) {
       console.error('Error loading dashboard data:', err);
@@ -125,8 +141,8 @@ export default function AdminDashboard() {
             value={formatCurrency(capitalAdmin)}
             icon={DollarSign}
             trend={{
-              value: accumulatedReturn,
-              isPositive: accumulatedReturn >= 0,
+              value: adminWeekChange,
+              isPositive: adminWeekChange >= 0,
             }}
           />
 
@@ -134,7 +150,10 @@ export default function AdminDashboard() {
             title="Capital Usuario"
             value={formatCurrency(capitalUser)}
             icon={Wallet}
-            trend={{ value: 0, isPositive: true }}
+            trend={{
+              value: userWeekChange,
+              isPositive: userWeekChange >= 0,
+            }}
           />
 
           <CardMetric
@@ -166,15 +185,7 @@ export default function AdminDashboard() {
           />
         </div>
 
-        {chartData.length > 0 && (
-          <ChartPanel
-            data={chartData.map((d) => ({
-              name: `W${d.week}`,
-              valor: d.total,
-            }))}
-            title="Evolución de Capital"
-          />
-        )}
+        <HWMChart data={chartData} title="Evolución del High Water Mark (HWM)" />
 
         <div className="card-fintage rounded-lg p-6">
           <h3 className="text-lg font-semibold text-white mb-4">
